@@ -1,6 +1,7 @@
 param (
     [string]$List = "list.txt",
     [string]$Output,
+    [string]$Extension,   # NEW PARAM
     [switch]$Help
 )
 
@@ -8,7 +9,7 @@ param (
 if ($Help) {
     Write-Host @"
 
-File Collector Script (v.1.0.0)
+File Collector Script (v.1.1.0)
 -------------------------------
 A PowerShell tool to collect files from current and subdirectories into a single organized folder.
 
@@ -25,10 +26,12 @@ Options:
                  IMG_250714
 
   -Output     (optional) Destination folder (under 'collecting').
+  -Extension  (optional) Only collect files with this extension
+               Example: -Extension ".jpg"
   -Help       Show this help.
 
 Example:
-  collect-files.ps1 -List "myfiles.txt" -Output "backup_250714"
+  collect-files.ps1 -List "myfiles.txt" -Output "backup_250714" -Extension ".jpg"
 
 Notes:
 - Collects files from the current directory and all subfolders (excluding the 'collecting' folder).
@@ -91,6 +94,16 @@ if (Test-Path $missingLogFile) { Clear-Content $missingLogFile }
 if (Test-Path $collectedLogFile) { Clear-Content $collectedLogFile }
 
 $foundFiles = Get-ChildItem -Recurse -File | Where-Object { $_.FullName -notmatch "collecting\\" }
+
+# === Apply Extension Filter if Provided ===
+if ($Extension) {
+    if ($Extension -notmatch "^\.") {
+        $Extension = ".$Extension"  # Ensure starts with dot
+    }
+    $foundFiles = $foundFiles | Where-Object { $_.Extension -ieq $Extension }
+    Write-Host "Filtering only *$Extension files..." -ForegroundColor Yellow
+}
+
 $missingFiles = @()
 $collectedEntries = @()
 
