@@ -50,14 +50,14 @@ Inside your PowerShell 7 terminal, you can use either method below to set up the
 Without Git (using `curl`):
 
 ```powershell
-curl -L -o "$env:TEMP\repo.zip" "https://github.com/saandhikaa/power-scripts/archive/refs/heads/main.zip"; Expand-Archive "$env:TEMP\repo.zip" "$env:TEMP\repo" -Force; Move-Item "$env:TEMP\repo\power-scripts-main\*" "$HOME\Documents\PowerShell\" -Force; Remove-Item "$env:TEMP\repo.zip","$env:TEMP\repo" -Recurse -Force
+curl -L -o "$env:TEMP\repo.zip" "https://github.com/astronaut-symphony/power-scripts/archive/refs/heads/main.zip"; Expand-Archive "$env:TEMP\repo.zip" "$env:TEMP\repo" -Force; Move-Item "$env:TEMP\repo\power-scripts-main\*" "$HOME\Documents\PowerShell\" -Force; Remove-Item "$env:TEMP\repo.zip","$env:TEMP\repo" -Recurse -Force
 ```
 <br/>
 
 Or, with Git (if installed):
 
 ```powershell
-git clone https://github.com/saandhikaa/power-scripts.git "$HOME\Documents\PowerShell"
+git clone https://github.com/astronaut-symphony/power-scripts.git "$HOME\Documents\PowerShell"
 ```
 
 This will place the scripts directly under your `Documents\PowerShell\` folder.
