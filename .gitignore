@@ -1,4 +1,7 @@
 Config/
+lib/
+Modules/
+bin/
 Library/
 
 # Ignore VSCode/IDE/editor configs
