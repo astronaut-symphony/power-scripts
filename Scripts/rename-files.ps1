@@ -41,14 +41,14 @@ Examples:
 
 Notes:
 - This script always excludes 'rename-files-logs' and folders set in:
-  $HOME\Documents\PowerShell\Config\rename-files-exclude.txt
+  $HOME\Documents\PowerShell\config\rename-files-exclude.txt
 - Logs in 'rename-files-logs\'.
 "@
     exit 0
 }
 
 # Config directory and default exclude config file
-$configDir = "$HOME\Documents\PowerShell\Config"
+$configDir = "$HOME\Documents\PowerShell\config"
 $defaultExcludeFile = "$configDir\rename-files-exclude.txt"
 
 # Setup config directory if needed
