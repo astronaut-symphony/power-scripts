@@ -60,11 +60,13 @@ if (-not (Test-Path $ytDlpPath)) {
     Write-Host "yt-dlp.exe not found in $ytDlpFolder" -ForegroundColor Red
     $confirm = Read-Host "Do you want to download yt-dlp.exe now? (Y/N)"
     if ($confirm -match '^[Yy]$') {
-        try {
-            Invoke-WebRequest -Uri "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe" -OutFile $ytDlpPath
-            Write-Host "Downloaded yt-dlp.exe" -ForegroundColor Green
-        } catch {
-            Write-Error "Failed to download yt-dlp: $_"
+        Write-Host "Downloading yt-dlp.exe..." -ForegroundColor Cyan
+        curl.exe -L `
+        "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe" `
+        -o $ytDlpPath
+
+        if (-not (Test-Path $ytDlpPath)) {
+            Write-Error "yt-dlp download failed."
             exit 1
         }
     } else {
