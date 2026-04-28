@@ -1,7 +1,30 @@
 param (
     [switch]$IncludeHidden,   # Include hidden/system files and folders
-    [switch]$WithExtension    # Keep file extensions in output
+        [switch]$WithExtension,   # Keep file extensions in output
+        [string[]]$Extension,     # Filter by one or more file extensions (e.g. ps1 or .ps1)
+        [switch]$Help             # Show usage information
 )
+
+if ($Help) {
+        Write-Host @"
+Usage:
+    .\get-file-list.ps1 [-IncludeHidden] [-WithExtension] [-Extension <ext1,ext2,...>] [-Help]
+
+Options:
+    -IncludeHidden   Include hidden/system files and folders.
+    -WithExtension   Keep file extensions in output names.
+    -Extension       Only include files matching one or more extensions.
+                                     Accepts values with or without dot (example: ps1, .txt).
+    -Help            Show this help and exit.
+
+Examples:
+    .\get-file-list.ps1
+    .\get-file-list.ps1 -WithExtension
+    .\get-file-list.ps1 -Extension ps1
+    .\get-file-list.ps1 -Extension ps1,txt -IncludeHidden
+"@
+        return
+}
 
 # Define output file path
 $outputFile = "FileList.txt"
@@ -27,6 +50,23 @@ $files = Get-ChildItem @gciParams |
         # Exclude dot-folders like .git, .vscode, .idea, etc.
         -not ($_.DirectoryName -match '\\\.[^\\]*')
     } |
+    Where-Object {
+        if (-not $Extension -or $Extension.Count -eq 0) {
+            $true
+        } else {
+            $normalizedExtensions = $Extension | ForEach-Object {
+                if ([string]::IsNullOrWhiteSpace($_)) {
+                    $null
+                } elseif ($_.StartsWith('.')) {
+                    $_.ToLowerInvariant()
+                } else {
+                    ".{0}" -f $_.ToLowerInvariant()
+                }
+            } | Where-Object { $_ }
+
+            $normalizedExtensions -contains $_.Extension.ToLowerInvariant()
+        }
+    } |
     Select-Object DirectoryName, @{
         Name       = "FileName"
         Expression = {
@@ -39,6 +79,13 @@ $files = Get-ChildItem @gciParams |
     }
 
 $total = $files.Count
+
+if ($total -eq 0) {
+    "No files matched the selected options." | Out-File -Encoding UTF8 $outputFile
+    Write-Host "No matching files found. Created $outputFile with a note."
+    return
+}
+
 $lastDir = ""
 $counter = 0
 
