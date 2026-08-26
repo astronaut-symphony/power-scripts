@@ -15,7 +15,7 @@ irm https://raw.githubusercontent.com/astronaut-symphony/power-scripts/main/inst
 This single command will:
 
 - Install PowerShell 7 if it isn't already on your system
-- Set up this repo under `Documents\PowerShell` — if that folder already has your own profile or scripts, they're merged in safely (see [Safe to re-run](#-safe-to-re-run--existing-files) below), nothing is deleted
+- Set up this repo under `Documents\PowerShell` — if that folder already exists and isn't this repo, it's backed up as a whole first (see [Safe to re-run](#-safe-to-re-run--existing-files) below), nothing is deleted
 - Add the `power-scripts` folder to your PATH so scripts can be run from anywhere
 - Set your execution policy to `RemoteSigned` so the scripts are allowed to run
 
@@ -48,7 +48,7 @@ Restart your terminal afterward and you're ready to go 🎉
 `install.ps1` can be run again any time (e.g. to update) without losing your own work:
 
 - If `Documents\PowerShell` is already this repo, it just runs `git pull` — any uncommitted local changes you made are stashed first (recoverable with `git stash pop`).
-- If the folder already has your own `Microsoft.PowerShell_profile.ps1` or other scripts that aren't part of this repo, the installer merges the repo in file-by-file: new files are added, files identical to the repo are left alone, and any file that differs gets renamed in place (e.g. `Microsoft.PowerShell_profile.ps1` → `Microsoft.PowerShell_profile_backup.ps1`) right before the repo's version is installed — so nothing you had is lost, and unrelated files of yours are never touched.
+- If the folder exists but isn't this repo (e.g. it has your own `Microsoft.PowerShell_profile.ps1` or other scripts), the whole folder is renamed aside to `Documents\PowerShell_backup_<timestamp>` before a clean clone is done in its place. Nothing is deleted — copy anything you need back out of the backup folder afterward.
 
 ## 🔔 Update Checking
 

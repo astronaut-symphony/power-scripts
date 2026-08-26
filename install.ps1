@@ -6,9 +6,10 @@
 .DESCRIPTION
     Automates the manual setup steps from the README:
       1. Checks for PowerShell 7 (installs it if missing)
-      2. Fetches the repo into Documents\PowerShell, merging file-by-file if
-         that folder already has your own profile/scripts — anything that
-         would be overwritten is backed up first, nothing is deleted
+      2. Sets up the repo in Documents\PowerShell — if that folder already
+         exists and isn't this repo, it's backed up as a whole (renamed to
+         Documents\PowerShell_backup_<timestamp>) before a clean clone,
+         nothing is deleted
       3. Adds the power-scripts folder to the user PATH
       4. Sets the execution policy so the scripts can run
 
@@ -60,20 +61,14 @@ if (-not $pwsh7) {
 #
 #    - If it's already this repo (has .git): just git pull. Uncommitted local
 #      changes get auto-stashed first (recoverable with 'git stash pop').
-#    - Otherwise the folder may already contain the user's own profile/scripts,
-#      so we fetch the repo to a temp folder and merge it in file-by-file:
-#      new files are added, files identical to the repo are left alone, and
-#      files that differ get renamed in place (e.g. profile.ps1 becomes
-#      profile_backup.ps1, right next to where it already was) before the
-#      repo version is copied in. Files the user has that the repo doesn't
-#      ship (e.g. their own custom scripts) are never touched.
+#    - Otherwise, if the folder exists but isn't this repo (e.g. your own
+#      profile/scripts live there), the whole folder is renamed aside as a
+#      backup (Documents\PowerShell_backup_<timestamp>) and a clean clone is
+#      done in its place. Nothing is deleted — copy anything you need back
+#      out of the backup folder afterward.
 # ---------------------------------------------------------------------------
 Write-Step "Setting up repository in $TargetFolder ..."
 $git = Get-Command git -ErrorAction SilentlyContinue
-
-# Files that are repo metadata, not something a user hand-edits — always update
-# these quietly instead of renaming them aside like a real conflict.
-$NoBackupFiles = @('version.txt', 'install.ps1', 'install.bat', 'README.md', 'LICENSE', '.gitignore')
 
 if (Test-Path (Join-Path $TargetFolder '.git')) {
     Write-Warn2 "Existing power-scripts repo detected here — pulling latest changes."
@@ -88,71 +83,27 @@ if (Test-Path (Join-Path $TargetFolder '.git')) {
     Write-Ok "Repo updated in place."
 }
 else {
-    Write-Warn2 "No existing power-scripts repo here — fetching a fresh copy and merging it in safely."
-    $TempSrc = Join-Path $env:TEMP "power-scripts-src-$(Get-Random)"
+    if (Test-Path $TargetFolder) {
+        $backupName = "PowerShell_backup_$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+        $backupPath = Join-Path (Split-Path $TargetFolder -Parent) $backupName
+        Write-Warn2 "'$TargetFolder' exists but isn't this repo — backing up the whole folder to '$backupPath' first."
+        Rename-Item -Path $TargetFolder -NewName $backupName
+        Write-Ok "Backed up. Nothing was deleted."
+    }
 
     if ($git) {
-        git clone --quiet $RepoUrl $TempSrc
+        git clone --quiet $RepoUrl $TargetFolder
+        Write-Ok "Cloned via git."
     } else {
+        Write-Warn2 "git not found — downloading zip instead."
         $zipPath = Join-Path $env:TEMP 'power-scripts.zip'
+        $tmpDir  = Join-Path $env:TEMP "power-scripts-extract-$(Get-Random)"
         Invoke-WebRequest -Uri "$RepoUrl/archive/refs/heads/main.zip" -OutFile $zipPath
-        Expand-Archive $zipPath $TempSrc -Force
-        $inner   = Get-ChildItem $TempSrc -Directory | Select-Object -First 1
-        $TempSrc = $inner.FullName
-        Remove-Item $zipPath -Force
-    }
-
-    New-Item -ItemType Directory -Path $TargetFolder -Force | Out-Null
-    $sourceFiles = Get-ChildItem $TempSrc -Recurse -File | Where-Object { $_.FullName -notmatch '\\\.git\\' }
-    $added = 0; $updated = 0; $skipped = 0
-    $backedUpFiles = @()
-
-    foreach ($file in $sourceFiles) {
-        $relPath  = $file.FullName.Substring($TempSrc.Length).TrimStart('\')
-        $destPath = Join-Path $TargetFolder $relPath
-
-        if (-not (Test-Path $destPath)) {
-            New-Item -ItemType Directory -Path (Split-Path $destPath) -Force | Out-Null
-            Copy-Item $file.FullName $destPath
-            $added++
-        }
-        else {
-            $same = (Get-FileHash $file.FullName).Hash -eq (Get-FileHash $destPath).Hash
-            if ($same) {
-                $skipped++
-            }
-            elseif ($NoBackupFiles -contains $file.Name) {
-                Copy-Item $file.FullName $destPath -Force
-                $updated++
-            }
-            else {
-                $dir  = Split-Path $destPath
-                $stem = [System.IO.Path]::GetFileNameWithoutExtension($destPath)
-                $ext  = [System.IO.Path]::GetExtension($destPath)
-                $backupPath = Join-Path $dir "${stem}_backup${ext}"
-                if (Test-Path $backupPath) {
-                    # a backup from an earlier run already exists — don't clobber that one either
-                    $backupPath = Join-Path $dir "${stem}_backup_$(Get-Date -Format 'yyyyMMdd-HHmmss')${ext}"
-                }
-                Rename-Item $destPath (Split-Path $backupPath -Leaf)
-                Copy-Item $file.FullName $destPath -Force
-                $updated++
-                $backedUpFiles += $backupPath
-                Write-Warn2 "'$relPath' already existed and differed — kept as '$(Split-Path $backupPath -Leaf)', repo version installed."
-            }
-        }
-    }
-
-    # Bring .git along too (if we had it) so future runs can just 'git pull' instead of merging again
-    if ($git -and (Test-Path (Join-Path $TempSrc '.git'))) {
-        Copy-Item (Join-Path $TempSrc '.git') (Join-Path $TargetFolder '.git') -Recurse -Force
-    }
-    Remove-Item $TempSrc -Recurse -Force -ErrorAction SilentlyContinue
-
-    Write-Ok "$added file(s) added, $updated updated, $skipped already up to date."
-    if ($backedUpFiles.Count -gt 0) {
-        Write-Warn2 "Your previous versions were kept alongside the new ones as:"
-        $backedUpFiles | ForEach-Object { Write-Host "        $_" -ForegroundColor DarkGray }
+        Expand-Archive $zipPath $tmpDir -Force
+        $inner = Get-ChildItem $tmpDir -Directory | Select-Object -First 1
+        Move-Item $inner.FullName $TargetFolder
+        Remove-Item $zipPath, $tmpDir -Recurse -Force -ErrorAction SilentlyContinue
+        Write-Ok "Downloaded and extracted."
     }
 }
 
