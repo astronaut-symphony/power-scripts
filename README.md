@@ -1,111 +1,74 @@
 # ⚡ PowerShell 7 Script Collection
 
-A personal collection of PowerShell 7 scripts to automate repetitive tasks, manage files, and process media.
-<br/><br/><br/>
+A personal collection of PowerShell 7 scripts to automate repetitive tasks and manage files.
 
-## 📁 Scripts Overview
+## 🚀 Setup on Windows
 
-| Script Name                 | Description |
-|-----------------------------|-------------|
-| `ytdlp`                     | Downloads videos/audio/subtitles from online sources via `yt-dlp` with simple options. |
-| `ffmpeg`                    | Wraps common `ffmpeg` tasks like audio extraction, merging, format conversion, and tag editing. |
-| `collect-files`             | Collects and copies files from nested directories based on a given list or filenames. |
-| `duplicate-check`           | Detects duplicate files by filename (excluding extension) in current and subdirectories. |
-| `get-file-list`             | Outputs a structured list of files grouped by their folder to `FileList.txt`. |
-| `rename-files`              | Renames files based on a CSV-style list, with include/exclude folder filtering. |
-| `clear-autocad-plot-suffix` | Recursively renames exported AutoCAD PDFs by removing suffixes like `-Layout1` or `-Model`. |
-| `image2pdf`                 | Converts all images in a folder into individual PDFs using Microsoft Print to PDF. |
-| `pwsh-context-menu`         | Quickly add or remove right-click context menu entries to open PowerShell 7 in any folder or folder background. |
+This collection works with **PowerShell 5.1 (built into Windows) or PowerShell 7+** — the installer below handles everything for you, including installing PowerShell 7 if you don't have it yet.
 
-<br/>
-
-**Note:** You can run this script with `-Help` option to display all available options along with usage instructions and examples.
-<br/><br/><br/>
-
-## ⚙️ Setup on Windows
-
-This script collection works best with **PowerShell 7+**. Follow these steps to get started:
-<br/><br/>
-
-### 1. Install PowerShell 7
-
-If you're still using Windows PowerShell 5.1, it's strongly recommended to upgrade to PowerShell 7 for better performance and compatibility.
-
-- Visit the official GitHub releases page [here](https://github.com/PowerShell/PowerShell/releases/latest).
-
-- Scroll down to the "Assets" section.
-
-- Download the appropriate installer for your system: `PowerShell-<version>-win-x64.msi`.
-Example: `PowerShell-7.5.2-win-x64.msi`
-
-- Open the .msi file to start the installation and follow the setup wizard.
-
-Once installed, **open PowerShell 7** (you can find it as `PowerShell 7` in your Start Menu or run `pwsh` from any terminal).
-<br/><br/>
-
-### 2. Clone This Repository to Your PowerShell Folder
-
-Inside your PowerShell 7 terminal, you can use either method below to set up the repository inside your PowerShell folder:
-
-Without Git (using `curl`):
+Open PowerShell and run:
 
 ```powershell
-curl -L -o "$env:TEMP\repo.zip" "https://github.com/astronaut-symphony/power-scripts/archive/refs/heads/main.zip"; Expand-Archive "$env:TEMP\repo.zip" "$env:TEMP\repo" -Force; Move-Item "$env:TEMP\repo\power-scripts-main\*" "$HOME\Documents\PowerShell\" -Force; Remove-Item "$env:TEMP\repo.zip","$env:TEMP\repo" -Recurse -Force
-```
-<br/>
-
-Or, with Git (if installed):
-
-```powershell
-git clone https://github.com/astronaut-symphony/power-scripts.git "$HOME\Documents\PowerShell"
+irm https://raw.githubusercontent.com/astronaut-symphony/power-scripts/main/install.ps1 | iex
 ```
 
-This will place the scripts directly under your `Documents\PowerShell\` folder.
-<br/><br/>
+This single command will:
 
-### 3. Add Script Folder to PATH
+- Install PowerShell 7 if it isn't already on your system
+- Set up this repo under `Documents\PowerShell` — if that folder already has your own profile or scripts, they're merged in safely (see [Safe to re-run](#-safe-to-re-run--existing-files) below), nothing is deleted
+- Add the `power-scripts` folder to your PATH so scripts can be run from anywhere
+- Set your execution policy to `RemoteSigned` so the scripts are allowed to run
 
-To use your scripts globally (from any folder), run:
+Restart your terminal afterward and you're ready to go 🎉
 
-```powershell
-[Environment]::SetEnvironmentVariable("PATH", $env:PATH + ";$HOME\Documents\PowerShell\Scripts", "User")
+<details>
+<summary>Prefer to see the manual steps instead?</summary>
+
+1. **Install PowerShell 7** from the [official releases page](https://github.com/PowerShell/PowerShell/releases/latest) — download `PowerShell-<version>-win-x64.msi` and run it.
+2. **Get the repo into `Documents\PowerShell`**:
+   ```
+   git clone https://github.com/astronaut-symphony/power-scripts.git "$HOME\Documents\PowerShell"
+   ```
+3. **Add the scripts folder to PATH**:
+   ```
+   [Environment]::SetEnvironmentVariable("PATH", $env:PATH + ";$HOME\Documents\PowerShell\power-scripts", "User")
+   ```
+4. **Allow scripts to run**:
+   ```
+   Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+   ```
+5. **Enable the right-click context menu (optional)** — open PowerShell 7 as Administrator and run:
+   ```
+   pwsh-context-menu.ps1 -Enable
+   ```
+</details>
+
+### 🔁 Safe to re-run / existing files
+
+`install.ps1` can be run again any time (e.g. to update) without losing your own work:
+
+- If `Documents\PowerShell` is already this repo, it just runs `git pull` — any uncommitted local changes you made are stashed first (recoverable with `git stash pop`).
+- If the folder already has your own `Microsoft.PowerShell_profile.ps1` or other scripts that aren't part of this repo, the installer merges the repo in file-by-file: new files are added, files identical to the repo are left alone, and any file that differs gets renamed in place (e.g. `Microsoft.PowerShell_profile.ps1` → `Microsoft.PowerShell_profile_backup.ps1`) right before the repo's version is installed — so nothing you had is lost, and unrelated files of yours are never touched.
+
+## 🔔 Update Checking
+
+This repo tracks its own version in `version.txt`. Once installed, your profile checks for updates automatically:
+
+- **Automatic:** every new terminal session checks once every 24 hours and only says something if an update is actually available — otherwise it stays silent.
+- **Manual:** run `Test-PowerScriptsUpdate -Force` any time to check immediately.
+
+If an update is available, you'll see a message telling you the current and new version — just re-run the install command above to update.
+
+## 📂 Folder Structure
+
 ```
-
-Then restart your terminal.
-<br/><br/>
-
-### 4. Allow Scripts to Run
-
-If this is your first time running custom PowerShell scripts, you may need to allow it:
-
-```powershell
-Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+Documents\PowerShell\
+├── power-scripts\     ← the scripts themselves (added to PATH)
+├── power-config\      ← configuration/support files (not on PATH)
+├── Microsoft.PowerShell_profile.ps1
+├── version.txt
+└── install.ps1
 ```
-
-When prompted, type `Y` to confirm.
-<br/><br/>
-
-### 5. Enable PowerShell 7 context menu (optional):
-
-Open PowerShell 7 as Administrator, run: 
-```powershell
-pwsh-context-menu.ps1 -Enable
-```
-
-🎉 That’s it! You’re now ready to use the scripts to simplify your file handling and automation tasks.
-<br/><br/><br/>
-
-## 📦 External Tools
-
-Some scripts rely on external tools stored in the `Library/` directory:
-
-| Tool     | Path                            | GitHub / Source Link                                  |
-|----------|----------------------------------|--------------------------------------------------------|
-| `yt-dlp` | `Library/ytdlp/yt-dlp.exe`      | [github.com/yt-dlp/yt-dlp](https://github.com/yt-dlp/yt-dlp) |
-| `ffmpeg` | `Library/ytdlp/ffmpeg.exe`      | [github.com/FFmpeg/FFmpeg](https://github.com/FFmpeg/FFmpeg) |
-
-These tools are downloaded and maintained automatically if missing. They are excluded from Git tracking.
-<br/><br/><br/>
 
 ## 💡 Contribution
 
@@ -117,9 +80,7 @@ Want to improve or add new features?
 - Push and open a pull request
 
 Let's build something helpful together!
-<br/><br/><br/>
 
 ## 📄 License
 
-This repository is intended for personal use and experimentation. You’re free to adapt it to your own workflows.
-<br/><br/><br/>
+This repository is intended for personal use and experimentation. You're free to adapt it to your own workflows.
