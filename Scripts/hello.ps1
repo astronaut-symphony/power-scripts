@@ -1,1 +1,0 @@
-Write-Host "Hello, this script works from anywhere!"
