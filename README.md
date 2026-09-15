@@ -59,11 +59,29 @@ This repo tracks its own version in `power-scripts\version.txt`. Once installed,
 
 If an update is available, you'll be asked whether to install it right then (Y/N) — or press `I` to ignore the prompt for a few days.
 
+## 🗑️ Uninstall
+
+To completely remove power-scripts, run:
+
+```powershell
+irm https://raw.githubusercontent.com/astronaut-symphony/power-scripts/main/power-scripts/uninstall.ps1 | iex
+```
+
+Or just run `uninstall.ps1` directly from the `power-scripts` folder.
+
+This will:
+
+- Remove the `power-scripts` folder from your PATH
+- Delete the repo folder (`Documents\PowerShell`) after asking for confirmation
+- Optionally reset your execution policy back to `Restricted`
+
+PowerShell 7 itself is **not** uninstalled.
+
 ## 📂 Folder Structure
 
 ```
 Documents\PowerShell\
-├── power-scripts\          ← everything else: all scripts, install.ps1, version.txt (added to PATH)
+├── power-scripts\          ← everything else: all scripts, install.ps1, uninstall.ps1, version.txt (added to PATH)
 │   ├── config\             ← local configuration, not tracked
 │   └── .update-*-cache     ← update-check/snooze state, not tracked
 ├── Modules\                ← installed PowerShell modules (e.g. PSWritePDF), not tracked

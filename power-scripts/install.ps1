@@ -33,6 +33,20 @@ function Write-Ok($msg)   { Write-Host "    OK: $msg" -ForegroundColor Green }
 function Write-Warn2($msg){ Write-Host "    !  $msg" -ForegroundColor Yellow }
 
 # ---------------------------------------------------------------------------
+# Confirm before proceeding
+# ---------------------------------------------------------------------------
+Write-Host "`nThis will install astronaut-symphony/power-scripts to $TargetFolder" -ForegroundColor Yellow
+Write-Host "  - Install PowerShell 7 (if missing)" -ForegroundColor Yellow
+Write-Host "  - Clone/pull the repo" -ForegroundColor Yellow
+Write-Host "  - Add power-scripts to PATH" -ForegroundColor Yellow
+Write-Host "  - Set execution policy to RemoteSigned" -ForegroundColor Yellow
+$confirm = Read-Host "`nProceed with install? (y/N)"
+if ($confirm -ne 'y' -and $confirm -ne 'Y') {
+    Write-Host "Aborted." -ForegroundColor Red
+    exit
+}
+
+# ---------------------------------------------------------------------------
 # 1. Ensure PowerShell 7 is installed
 # ---------------------------------------------------------------------------
 Write-Step "Checking for PowerShell 7..."
