@@ -72,7 +72,7 @@
 
 .EXAMPLE
     .\Register-ContextMenuScript.ps1 -Name DupeCheck -Label "Check Duplicates" `
-        -ScriptPath "$HOME\Documents\PowerShell\power-scripts\duplicate-check.ps1"
+        -ScriptPath "$HOME\Documents\PowerShell\power-scripts\duplicate-file-check.ps1"
 
 .EXAMPLE
     .\Register-ContextMenuScript.ps1 -Name GetFileList -Remove

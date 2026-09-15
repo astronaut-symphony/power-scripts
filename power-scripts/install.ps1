@@ -13,8 +13,8 @@
       3. Adds the power-scripts folder to the user PATH
       4. Sets the execution policy so the scripts can run
 
-    (Right-click context menu integration is left out on purpose — run
-    pwsh-context-menu.ps1 -Enable yourself if you want that.)
+    (Right-click context menu integration is optional — answer Y when asked
+    and the installer registers the scripts via Register-ContextMenuScript.ps1.)
 
     Safe to re-run — every step checks current state before changing anything.
 
