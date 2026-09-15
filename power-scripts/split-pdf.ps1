@@ -32,7 +32,31 @@ if (-not (Get-Module -ListAvailable -Name PSWritePDF)) {
 }
 
 # === Import module ===
-Import-Module PSWritePDF -ErrorAction Stop
+try {
+    Import-Module PSWritePDF -ErrorAction Stop
+}
+catch {
+    Write-Host "PSWritePDF is present but could not be loaded (incompatible version or corrupted installation)." -ForegroundColor Yellow
+
+    $response = Read-Host "Reinstall it now? (Y/N)"
+    if ($response -match '^[Yy]$') {
+        try {
+            Write-Host "Reinstalling PSWritePDF..." -ForegroundColor Cyan
+            Uninstall-Module PSWritePDF -Force -ErrorAction SilentlyContinue
+            Install-Module PSWritePDF -Scope CurrentUser -Force -ErrorAction Stop
+            Import-Module PSWritePDF -ErrorAction Stop
+            Write-Host "PSWritePDF successfully reinstalled." -ForegroundColor Green
+        }
+        catch {
+            Write-Host "Failed to reinstall PSWritePDF. Please check your internet connection or PowerShell Gallery access." -ForegroundColor Red
+            exit 1
+        }
+    }
+    else {
+        Write-Host "PSWritePDF is required. Exiting..." -ForegroundColor Red
+        exit 1
+    }
+}
 
 # === Prepare output folder ===
 $sourceDir = Split-Path $FilePath
@@ -75,3 +99,7 @@ Get-ChildItem -Path $outputDir -Filter '*.pdf' |
 Write-Host ""
 Write-Host "Split completed successfully." -ForegroundColor Green
 Write-Host "Output folder: $outputDir" -ForegroundColor Green
+
+# === Check for power-scripts update ===
+. (Join-Path $PSScriptRoot 'PowerScripts.Update.ps1')
+Update-PowerScriptsPrompt

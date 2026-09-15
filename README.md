@@ -9,7 +9,7 @@ This collection works with **PowerShell 5.1 (built into Windows) or PowerShell 7
 Open PowerShell and run:
 
 ```powershell
-irm https://raw.githubusercontent.com/astronaut-symphony/power-scripts/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/astronaut-symphony/power-scripts/main/power-scripts/install.ps1 | iex
 ```
 
 This single command will:
@@ -37,9 +37,9 @@ Restart your terminal afterward and you're ready to go 🎉
    ```
    Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
    ```
-5. **Enable the right-click context menu (optional)** — open PowerShell 7 as Administrator and run:
+5. **Enable the right-click context menu (optional)** — run the installer again and answer "Y" when it asks about the context menu, or register scripts manually:
    ```
-   pwsh-context-menu.ps1 -Enable
+   .\power-scripts\Register-ContextMenuScript.ps1 -Name GetFileList -Label "Export File List" -ScriptPath "$HOME\Documents\PowerShell\power-scripts\export-file-list.ps1"
    ```
 </details>
 
@@ -52,22 +52,23 @@ Restart your terminal afterward and you're ready to go 🎉
 
 ## 🔔 Update Checking
 
-This repo tracks its own version in `version.txt`. Once installed, your profile checks for updates automatically:
+This repo tracks its own version in `power-scripts\version.txt`. Once installed, your profile checks for updates automatically (and every script reminds you at the end of a run):
 
 - **Automatic:** every new terminal session checks once every 24 hours and only says something if an update is actually available — otherwise it stays silent.
-- **Manual:** run `Test-PowerScriptsUpdate -Force` any time to check immediately.
+- **Manual:** run `Test-PowerScriptsUpdate -Force` any time to check immediately, or run `PowerScripts.Update.ps1` by double-clicking / "Run with PowerShell".
 
-If an update is available, you'll see a message telling you the current and new version — just re-run the install command above to update.
+If an update is available, you'll be asked whether to install it right then (Y/N) — or press `I` to ignore the prompt for a few days.
 
 ## 📂 Folder Structure
 
 ```
 Documents\PowerShell\
-├── power-scripts\     ← the scripts themselves (added to PATH)
-├── power-config\      ← configuration/support files (not on PATH)
+├── power-scripts\          ← everything else: all scripts, install.ps1, version.txt (added to PATH)
+│   ├── config\             ← local configuration, not tracked
+│   └── .update-*-cache     ← update-check/snooze state, not tracked
+├── Modules\                ← installed PowerShell modules (e.g. PSWritePDF), not tracked
 ├── Microsoft.PowerShell_profile.ps1
-├── version.txt
-└── install.ps1
+└── README.md
 ```
 
 ## 💡 Contribution

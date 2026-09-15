@@ -41,14 +41,14 @@ Examples:
 
 Notes:
 - This script always excludes 'rename-files-logs' and folders set in:
-  $HOME\Documents\PowerShell\config\rename-files-exclude.txt
+  $HOME\Documents\PowerShell\power-scripts\config\rename-files-exclude.txt
 - Logs in 'rename-files-logs\'.
 "@
     exit 0
 }
 
 # Config directory and default exclude config file
-$configDir = "$HOME\Documents\PowerShell\config"
+$configDir = "$HOME\Documents\PowerShell\power-scripts\config"
 $defaultExcludeFile = "$configDir\rename-files-exclude.txt"
 
 # Setup config directory if needed
@@ -192,3 +192,7 @@ if ($missingLog.Count -gt 0) {
     $missingLog | Out-File -FilePath $notFoundFile -Encoding UTF8
     Write-Host "Missing file log saved to: $notFoundFile" -ForegroundColor Yellow
 }
+
+# === Check for power-scripts update ===
+. (Join-Path $PSScriptRoot 'PowerScripts.Update.ps1')
+Update-PowerScriptsPrompt

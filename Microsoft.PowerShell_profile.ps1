@@ -64,3 +64,7 @@ function prompt {
 
     "`n$blue$shortenedPath$gitBranch$resetColor`n$cyan❯ $resetColor"
 }
+
+# === Update check for power-scripts ===
+. (Join-Path $PSScriptRoot 'power-scripts\PowerScripts.Update.ps1')
+Test-PowerScriptsUpdate -Silent

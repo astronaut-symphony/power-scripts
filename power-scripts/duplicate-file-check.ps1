@@ -36,3 +36,7 @@ $fileNames.GetEnumerator() | ForEach-Object {
 If (-not $foundDuplicates) {
     Write-Host "No duplicate files found."
 }
+
+# === Check for power-scripts update ===
+. (Join-Path $PSScriptRoot 'PowerScripts.Update.ps1')
+Update-PowerScriptsPrompt

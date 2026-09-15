@@ -8,7 +8,7 @@ param (
 if ($Help) {
         Write-Host @"
 Usage:
-    .\get-file-list.ps1 [-IncludeHidden] [-WithExtension] [-Extension <ext1,ext2,...>] [-Help]
+    .\export-file-list.ps1 [-IncludeHidden] [-WithExtension] [-Extension <ext1,ext2,...>] [-Help]
 
 Options:
     -IncludeHidden   Include hidden/system files and folders.
@@ -18,10 +18,10 @@ Options:
     -Help            Show this help and exit.
 
 Examples:
-    .\get-file-list.ps1
-    .\get-file-list.ps1 -WithExtension
-    .\get-file-list.ps1 -Extension ps1
-    .\get-file-list.ps1 -Extension ps1,txt -IncludeHidden
+    .\export-file-list.ps1
+    .\export-file-list.ps1 -WithExtension
+    .\export-file-list.ps1 -Extension ps1
+    .\export-file-list.ps1 -Extension ps1,txt -IncludeHidden
 "@
         return
 }
@@ -114,3 +114,7 @@ $files | ForEach-Object {
 Write-Progress -Activity "Exporting files..." -Completed
 
 Write-Host "File list exported to $outputFile successfully!"
+
+# === Check for power-scripts update ===
+. (Join-Path $PSScriptRoot 'PowerScripts.Update.ps1')
+Update-PowerScriptsPrompt

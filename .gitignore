@@ -1,8 +1,10 @@
-Config/
+config/
 lib/
 Modules/
 bin/
 Library/
+.update-check-cache
+.update-snooze-cache
 
 # Ignore VSCode/IDE/editor configs
 .vscode/

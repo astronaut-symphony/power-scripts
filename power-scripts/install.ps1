@@ -13,19 +13,19 @@
       3. Adds the power-scripts folder to the user PATH
       4. Sets the execution policy so the scripts can run
 
-    (Right-click context menu integration is left out on purpose — run
-    pwsh-context-menu.ps1 -Enable yourself if you want that.)
+    (Right-click context menu integration is optional — answer Y when asked
+    and the installer registers the scripts via Register-ContextMenuScript.ps1.)
 
     Safe to re-run — every step checks current state before changing anything.
 
 .USAGE
     Double-click install.bat (recommended, handles elevation automatically), or run:
-        irm https://raw.githubusercontent.com/astronaut-symphony/power-scripts/main/install.ps1 | iex
+        irm https://raw.githubusercontent.com/astronaut-symphony/power-scripts/main/power-scripts/install.ps1 | iex
 #>
 
 $ErrorActionPreference = 'Stop'
 $RepoUrl      = 'https://github.com/astronaut-symphony/power-scripts'
-$TargetFolder = Join-Path $HOME 'Documents\PowerShell'
+$TargetFolder = if ($PSScriptRoot) { Split-Path $PSScriptRoot -Parent } else { Join-Path $HOME 'Documents\PowerShell' }
 $ScriptsPath  = Join-Path $TargetFolder 'power-scripts'   # only this subfolder goes on PATH; power-config does not
 
 function Write-Step($msg) { Write-Host "`n==> $msg" -ForegroundColor Cyan }
@@ -131,5 +131,25 @@ if ($currentPolicy -eq 'Restricted' -or $currentPolicy -eq 'Undefined' -or $curr
     Write-Ok "Execution policy already permissive ($currentPolicy)."
 }
 
+# ---------------------------------------------------------------------------
+# 5. Optional: register common scripts into the right-click context menu
+# ---------------------------------------------------------------------------
+Write-Step "Registering scripts into the right-click context menu (optional)..."
+$registerPath = Join-Path $ScriptsPath 'Register-ContextMenuScript.ps1'
+$response = Read-Host "Register power-scripts to the right-click context menu? (Y/N, default N)"
+if ($response -match '^[Yy]$') {
+    if (Test-Path $registerPath) {
+        & $registerPath -Name DupeCheck  -Label 'Check Duplicates'    -ScriptPath (Join-Path $ScriptsPath 'duplicate-file-check.ps1')
+        & $registerPath -Name GenReplace -Label 'Generate Replace LISP' -ScriptPath (Join-Path $ScriptsPath 'generate-replace-autocad.ps1')
+        & $registerPath -Name GetFileList -Label 'Export File List'   -ScriptPath (Join-Path $ScriptsPath 'export-file-list.ps1')
+        & $registerPath -Name SplitPDF   -Label 'Split PDF' -ScriptPath (Join-Path $ScriptsPath 'split-pdf.ps1') -Target File -FileExtension '.pdf'
+        Write-Ok "Context menu entries registered. Right-click a folder or a .pdf file -> 'Power Script'."
+    } else {
+        Write-Warn2 "Register-ContextMenuScript.ps1 not found — skipping."
+    }
+} else {
+    Write-Ok "Skipped."
+}
+
 Write-Host "`n🎉 Setup complete! Restart your terminal, then open PowerShell 7 and start using the scripts.`n" -ForegroundColor Green
-Write-Host "    (Want the right-click context menu too? Run pwsh-context-menu.ps1 -Enable from an elevated PowerShell.)`n" -ForegroundColor DarkGray
+Write-Host "    (To (re)register the right-click context menu: run install.ps1 again and answer Y.)`n" -ForegroundColor DarkGray

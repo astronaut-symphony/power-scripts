@@ -97,3 +97,7 @@ foreach ($imageFile in $imageFiles) {
 }
 
 Write-Host "Conversion complete. PDFs saved to $outputDir."
+
+# === Check for power-scripts update ===
+. (Join-Path $PSScriptRoot 'PowerScripts.Update.ps1')
+Update-PowerScriptsPrompt
