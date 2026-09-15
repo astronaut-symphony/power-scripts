@@ -149,7 +149,11 @@ function Get-PwshExe {
 # menu populated by the child keys under its own \shell\ subkey.
 function Set-ContextMenuGroup([string]$BasePath) {
     $groupPath = Join-Path $BasePath "shell\$GroupName"
-    New-Item -Path $groupPath -Force | Out-Null
+    # NOTE: New-Item -Force on an EXISTING registry key deletes its child keys,
+    # so only create the group when it isn't there yet.
+    if (-not (Test-Path $groupPath)) {
+        New-Item -Path $groupPath | Out-Null
+    }
     Set-ItemProperty -Path $groupPath -Name 'MUIVerb' -Value $GroupLabel
     Set-ItemProperty -Path $groupPath -Name 'subcommands' -Value ''
     if ($GroupIcon) {
