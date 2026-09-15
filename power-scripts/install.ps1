@@ -98,11 +98,17 @@ if (Test-Path (Join-Path $TargetFolder '.git')) {
 }
 else {
     if (Test-Path $TargetFolder) {
-        $backupName = "PowerShell_backup_$(Get-Date -Format 'yyyyMMdd-HHmmss')"
-        $backupPath = Join-Path (Split-Path $TargetFolder -Parent) $backupName
-        Write-Warn2 "'$TargetFolder' exists but isn't this repo — backing up the whole folder to '$backupPath' first."
-        Rename-Item -Path $TargetFolder -NewName $backupName
-        Write-Ok "Backed up. Nothing was deleted."
+        Write-Warn2 "'$TargetFolder' exists but isn't this repo."
+        $choice = Read-Host "    (B)ackup old folder, or (R)eplace directly? (B/R)"
+        if ($choice -match '^[Rr]$') {
+            Remove-Item -Path $TargetFolder -Recurse -Force
+            Write-Ok "Old folder removed."
+        } else {
+            $backupName = "PowerShell_backup_$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+            $backupPath = Join-Path (Split-Path $TargetFolder -Parent) $backupName
+            Rename-Item -Path $TargetFolder -NewName $backupName
+            Write-Ok "Backed up to '$backupPath'. Nothing was deleted."
+        }
     }
 
     if ($git) {
