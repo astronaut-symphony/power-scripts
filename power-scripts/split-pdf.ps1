@@ -99,3 +99,7 @@ Get-ChildItem -Path $outputDir -Filter '*.pdf' |
 Write-Host ""
 Write-Host "Split completed successfully." -ForegroundColor Green
 Write-Host "Output folder: $outputDir" -ForegroundColor Green
+
+# === Check for power-scripts update ===
+. (Join-Path $PSScriptRoot 'PowerScripts.Update.ps1')
+Update-PowerScriptsPrompt

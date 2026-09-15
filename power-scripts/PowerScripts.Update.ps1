@@ -19,6 +19,7 @@ $script:PowerScriptsRoot    = Split-Path $PSScriptRoot -Parent          # Docume
 $script:PowerScriptsRepo    = 'astronaut-symphony/power-scripts'
 $script:VersionFile         = Join-Path $script:PowerScriptsRoot 'version.txt'
 $script:UpdateCheckCache    = Join-Path $script:PowerScriptsRoot '.update-check-cache'
+$script:UpdateSnoozeFile    = Join-Path $script:PowerScriptsRoot '.update-snooze-cache'
 $script:UpdateCheckEveryHrs = 24
 
 function Get-PowerScriptsLocalVersion {
@@ -50,8 +51,18 @@ function Test-PowerScriptsUpdate {
     #>
     param(
         [switch]$Silent,
-        [switch]$Force
+        [switch]$Force,
+        [switch]$PassThru
     )
+
+    if (-not $Force -and (Test-Path $script:UpdateSnoozeFile)) {
+        try {
+            $snoozedUntil = [datetime](Get-Content $script:UpdateSnoozeFile -Raw)
+            if ((Get-Date) -lt $snoozedUntil) {
+                return   # user snoozed the update prompt — stay quiet
+            }
+        } catch { }   # bad/corrupt snooze file — fall through and check now
+    }
 
     if (-not $Force -and (Test-Path $script:UpdateCheckCache)) {
         try {
@@ -91,4 +102,79 @@ function Test-PowerScriptsUpdate {
     elseif (-not $Silent) {
         Write-Host "power-scripts is up to date (v$local)." -ForegroundColor Green
     }
+
+    if ($PassThru) { return [bool]$isNewer }
+}
+
+# === One-click update (running this file directly, e.g. via "Run with PowerShell") ===
+
+function Update-PowerScripts {
+    <#
+    .SYNOPSIS
+        Downloads and applies the latest power-scripts install.ps1 from GitHub.
+    #>
+    try {
+        Write-Host ""
+        Write-Host "Downloading and installing power-scripts update..." -ForegroundColor Cyan
+        $installScript = Invoke-RestMethod -Uri "https://raw.githubusercontent.com/$($script:PowerScriptsRepo)/main/install.ps1" -TimeoutSec 30
+        Invoke-Expression $installScript
+    }
+    catch {
+        Write-Host "Update failed: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "Try running this in a PowerShell window as Administrator." -ForegroundColor Yellow
+    }
+}
+
+function Set-PowerScriptsSnooze {
+    <#
+    .SYNOPSIS
+        Hides the update prompt for the given number of days.
+    #>
+    param([int]$Days = 7)
+
+    if ($Days -lt 1) { $Days = 1 }
+    $until = (Get-Date).AddDays($Days)
+    $until.ToString('o') | Set-Content $script:UpdateSnoozeFile
+    Write-Host "Update prompt dismissed for $Days day(s) (until $until)." -ForegroundColor DarkGray
+}
+
+function Update-PowerScriptsPrompt {
+    <#
+    .SYNOPSIS
+        Checks (24h-throttled) for a newer power-scripts version. If one exists,
+        prints the info and asks Y/N to install, or I to snooze for a few days.
+        Ideal at the end of a script run.
+    #>
+    param([switch]$Force)
+
+    # -Silent keeps the "up to date" line quiet; the update-available banner still prints.
+    if (-not (Test-PowerScriptsUpdate -Silent -PassThru -Force:$Force)) {
+        return
+    }
+
+    Write-Host ""
+    $response = Read-Host "Install the update now? (Y/N, default N) or [I]gnore for 7 days "
+    switch -Regex ($response) {
+        '^[Yy]' {
+            Update-PowerScripts
+            break
+        }
+        '^[Ii]' {
+            $days = Read-Host "Ignore for how many days? (default 7)"
+            if ([int]::TryParse($days, [ref]$null)) {
+                Set-PowerScriptsSnooze ([math]::Max(1, [int]$days))
+            } else {
+                Set-PowerScriptsSnooze
+            }
+            break
+        }
+        default {
+            Write-Host "Update skipped." -ForegroundColor DarkGray
+        }
+    }
+}
+
+# === One-click update (running this file directly, e.g. via "Run with PowerShell") ===
+if ($MyInvocation.InvocationName -ne '.') {
+    Update-PowerScriptsPrompt -Force
 }

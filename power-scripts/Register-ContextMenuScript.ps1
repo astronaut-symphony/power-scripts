@@ -195,3 +195,7 @@ if ($Target -in 'Background', 'Both') { $bases += 'HKCU:\Software\Classes\Direct
 foreach ($base in $bases) {
     Set-ContextMenuEntry $base
 }
+
+# === Check for power-scripts update ===
+. (Join-Path $PSScriptRoot 'PowerScripts.Update.ps1')
+Update-PowerScriptsPrompt

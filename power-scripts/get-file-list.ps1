@@ -114,3 +114,7 @@ $files | ForEach-Object {
 Write-Progress -Activity "Exporting files..." -Completed
 
 Write-Host "File list exported to $outputFile successfully!"
+
+# === Check for power-scripts update ===
+. (Join-Path $PSScriptRoot 'PowerScripts.Update.ps1')
+Update-PowerScriptsPrompt

@@ -431,3 +431,7 @@ Write-Host ""
 Write-Host "Generated : $output" -ForegroundColor Green
 Write-Host "Command   : $cmdName" -ForegroundColor Green
 Write-Host ""
+
+# === Check for power-scripts update ===
+. (Join-Path $PSScriptRoot 'PowerScripts.Update.ps1')
+Update-PowerScriptsPrompt

@@ -192,3 +192,7 @@ if ($missingLog.Count -gt 0) {
     $missingLog | Out-File -FilePath $notFoundFile -Encoding UTF8
     Write-Host "Missing file log saved to: $notFoundFile" -ForegroundColor Yellow
 }
+
+# === Check for power-scripts update ===
+. (Join-Path $PSScriptRoot 'PowerScripts.Update.ps1')
+Update-PowerScriptsPrompt
