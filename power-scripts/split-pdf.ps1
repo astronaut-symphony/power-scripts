@@ -1,11 +1,34 @@
 param(
-    [Parameter(Mandatory = $true, Position = 0)]
+    [Parameter(Position = 0)]
     [string]$FilePath
 )
+
+# === Interactive file picker if no FilePath provided ===
+if (-not $FilePath) {
+    Add-Type -AssemblyName System.Windows.Forms
+
+    $dialog = New-Object System.Windows.Forms.OpenFileDialog
+    $dialog.Title = "Select PDF to Split"
+    $dialog.Filter = "PDF files (*.pdf)|*.pdf|All files (*.*)|*.*"
+    $dialog.InitialDirectory = (Get-Location).Path
+
+    if ($dialog.ShowDialog() -ne [System.Windows.Forms.DialogResult]::OK) {
+        Write-Host "No file selected. Exiting." -ForegroundColor Red
+        exit 0
+    }
+
+    $FilePath = $dialog.FileName
+}
 
 # === Validate input file ===
 if (-not (Test-Path $FilePath)) {
     Write-Host "File not found: $FilePath" -ForegroundColor Red
+    exit 1
+}
+
+# Ensure it's a PDF
+if ([System.IO.Path]::GetExtension($FilePath).ToLower() -ne '.pdf') {
+    Write-Host "Selected file is not a PDF: $FilePath" -ForegroundColor Red
     exit 1
 }
 
@@ -76,7 +99,30 @@ if (!(Test-Path $outputDir)) {
 
 # === Split PDF ===
 Write-Host "Splitting '$baseName.pdf'..." -ForegroundColor Cyan
-Split-PDF -FilePath $FilePath -OutputFolder $outputDir -Verbose:$false
+
+$job = Start-Job -ScriptBlock {
+    param($Path, $OutDir)
+    Import-Module PSWritePDF -ErrorAction Stop
+    Split-PDF -FilePath $Path -OutputFolder $OutDir -Verbose:$false
+} -ArgumentList $FilePath, $outputDir
+
+$spinner = @('⠋','⠙','⠹','⠸','⠼','⠴','⠦','⠧','⠇','⠏')
+$idx = 0
+while ($job.State -eq 'Running') {
+    Write-Host "`r  $($spinner[$idx % $spinner.Count]) Processing..." -NoNewline -ForegroundColor Cyan
+    $idx++
+    Start-Sleep -Milliseconds 100
+}
+Write-Host "`r                                    `r" -NoNewline
+
+if ($job.State -eq 'Failed') {
+    Write-Host "Split failed: $($job.ChildJobs[0].JobStateInfo.Reason.Message)" -ForegroundColor Red
+    Remove-Job $job -Force
+    exit 1
+}
+
+Receive-Job $job
+Remove-Job $job
 
 # === Rename results with numeric order ===
 Write-Host "Renaming output files..." -ForegroundColor Cyan

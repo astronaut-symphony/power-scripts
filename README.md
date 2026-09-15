@@ -37,9 +37,9 @@ Restart your terminal afterward and you're ready to go 🎉
    ```
    Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
    ```
-5. **Enable the right-click context menu (optional)** — run the installer again and answer "Y" when it asks about the context menu, or register scripts manually:
+5. **Enable the right-click context menu (optional)** — pick which scripts to register:
    ```
-   .\power-scripts\Register-ContextMenuScript.ps1 -Name GetFileList -Label "Export File List" -ScriptPath "$HOME\Documents\PowerShell\power-scripts\export-file-list.ps1"
+   .\power-scripts\setup-context-menu.ps1
    ```
 </details>
 
