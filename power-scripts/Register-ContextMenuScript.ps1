@@ -16,6 +16,8 @@
       - Folder      : right-click a folder's icon             (Directory\shell)
       - Background  : right-click empty space inside a folder (Directory\Background\shell)
       - Both        : add to both locations (default)
+      - File        : right-click a file with -FileExtension (e.g. .pdf); the
+                      script is called as `script -FilePath '%1'`
 
     The script runs with its working directory set to the folder you
     right-clicked, so scripts using relative paths (like Path "." in
@@ -38,7 +40,10 @@
     Extra arguments passed to the script, as one string (e.g. "-WithExtension -Extension ps1").
 
 .PARAMETER Target
-    Folder, Background, or Both (default).
+    Folder, Background, Both (default), or File (uses -FileExtension).
+
+.PARAMETER FileExtension
+    Which file extension to target when -Target File (e.g. ".pdf").
 
 .PARAMETER Icon
     Optional path to an .ico file, or "some.exe,0" / "some.dll,-1" style icon reference,
@@ -78,8 +83,9 @@ param(
     [string]$Label,
     [string]$ScriptPath,
     [string]$Arguments = "",
-    [ValidateSet('Folder', 'Background', 'Both')]
+    [ValidateSet('Folder', 'Background', 'Both', 'File')]
     [string]$Target = 'Both',
+    [string]$FileExtension = '.pdf',
     [string]$Icon,
     [string]$GroupName = 'PowerScripts',
     [string]$GroupLabel = 'Power Script',
@@ -91,28 +97,30 @@ param(
 if ($Help) {
     Write-Host @"
 Usage:
-    .\Register-ContextMenuScript.ps1 -Name <id> -Label <text> -ScriptPath <path> [-Arguments <args>] [-Target Folder|Background|Both] [-Icon <path>] [-GroupLabel <text>]
+    .\Register-ContextMenuScript.ps1 -Name <id> -Label <text> -ScriptPath <path> [-Arguments <args>] [-Target Folder|Background|Both|File] [-FileExtension <ext>] [-Icon <path>] [-GroupLabel <text>]
     .\Register-ContextMenuScript.ps1 -Name <id> -Remove
 
 Every entry added is nested under a single "Power Script" (or -GroupLabel) submenu
 instead of cluttering the top-level right-click menu.
 
 Options:
-    -Name         Internal registry key name for this entry, no spaces (required).
-    -Label        Text shown for this entry in the submenu. Defaults to -Name.
-    -ScriptPath   Full path to the .ps1 script to run (required unless -Remove).
-    -Arguments    Extra arguments passed to the script, as one string.
-    -Target       Folder, Background, or Both (default: Both).
-    -Icon         Optional icon for this entry, e.g. "shell32.dll,-16".
-    -GroupName    Internal registry key name for the submenu. Default: PowerScripts.
-    -GroupLabel   Text shown for the submenu itself. Default: "Power Script".
-    -GroupIcon    Optional icon for the submenu heading.
-    -Remove       Remove this entry instead of adding it.
-    -Help         Show this help and exit.
+    -Name            Internal registry key name for this entry, no spaces (required).
+    -Label           Text shown for this entry in the submenu. Defaults to -Name.
+    -ScriptPath      Full path to the .ps1 script to run (required unless -Remove).
+    -Arguments       Extra arguments passed to the script, as one string.
+    -Target          Folder, Background, Both (default), or File.
+    -FileExtension   Extension used when -Target File (e.g. ".pdf"). Script is called with -FilePath '%1'.
+    -Icon            Optional icon for this entry, e.g. "shell32.dll,-16".
+    -GroupName       Internal registry key name for the submenu. Default: PowerScripts.
+    -GroupLabel      Text shown for the submenu itself. Default: "Power Script".
+    -GroupIcon       Optional icon for the submenu heading.
+    -Remove          Remove this entry instead of adding it.
+    -Help            Show this help and exit.
 
 Examples:
     .\Register-ContextMenuScript.ps1 -Name GetFileList -Label "Export File List" -ScriptPath "$HOME\Documents\PowerShell\power-scripts\get-file-list.ps1" -Arguments "-WithExtension"
-    .\Register-ContextMenuScript.ps1 -Name DupeCheck -Label "Check Duplicates" -ScriptPath "$HOME\Documents\PowerShell\power-scripts\duplicate-check.ps1"
+    .\Register-ContextMenuScript.ps1 -Name SplitPDF -Label "Split PDF to Folder" -ScriptPath "$HOME\Documents\PowerShell\power-scripts\split-pdf.ps1" -Target File -FileExtension ".pdf"
+    .\Register-ContextMenuScript.ps1 -Name DupeCheck -Label "Check Duplicates" -ScriptPath "$HOME\Documents\PowerShell\power-scripts\duplicate-file-check.ps1"
     .\Register-ContextMenuScript.ps1 -Name GetFileList -Remove
 "@
     return
@@ -150,7 +158,7 @@ function Set-ContextMenuGroup([string]$BasePath) {
     return $groupPath
 }
 
-function Set-ContextMenuEntry([string]$BasePath) {
+function Set-ContextMenuEntry([string]$BasePath, [switch]$IsFile) {
     $groupPath = Set-ContextMenuGroup $BasePath
     $keyPath   = Join-Path $groupPath "shell\$Name"
 
@@ -178,10 +186,15 @@ function Set-ContextMenuEntry([string]$BasePath) {
     New-Item -Path $cmdKeyPath -Force | Out-Null
 
     $pwshExe = Get-PwshExe
-    # %V expands to the target folder for both Directory\shell and Directory\Background\shell.
-    # Everything after it runs with that folder as the working directory, then waits for a
-    # single keypress (no Enter needed) before the console window closes.
-    $inner = "Set-Location -LiteralPath '%V'; & '$ScriptPath' $Arguments; Write-Host ''; Write-Host 'Press any key to exit...' -NoNewline; `$null = `$Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')"
+    if ($IsFile) {
+        # %1 expands to the right-clicked file; the script receives it as -FilePath
+        $inner = "Set-Location -LiteralPath (Split-Path -Parent '%1'); & '$ScriptPath' -FilePath '%1' $Arguments; Write-Host ''; Write-Host 'Press any key to exit...' -NoNewline; `$null = `$Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')"
+    } else {
+        # %V expands to the target folder for both Directory\shell and Directory\Background\shell.
+        # Everything after it runs with that folder as the working directory, then waits for a
+        # single keypress (no Enter needed) before the console window closes.
+        $inner = "Set-Location -LiteralPath '%V'; & '$ScriptPath' $Arguments; Write-Host ''; Write-Host 'Press any key to exit...' -NoNewline; `$null = `$Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')"
+    }
     $commandLine = "`"$pwshExe`" -NoProfile -ExecutionPolicy Bypass -Command `"$inner`""
     Set-ItemProperty -Path $cmdKeyPath -Name '(default)' -Value $commandLine
 
@@ -191,9 +204,10 @@ function Set-ContextMenuEntry([string]$BasePath) {
 $bases = @()
 if ($Target -in 'Folder', 'Both')     { $bases += 'HKCU:\Software\Classes\Directory' }
 if ($Target -in 'Background', 'Both') { $bases += 'HKCU:\Software\Classes\Directory\Background' }
+if ($Target -eq 'File')               { $bases += "HKCU:\Software\Classes\$FileExtension" }
 
 foreach ($base in $bases) {
-    Set-ContextMenuEntry $base
+    Set-ContextMenuEntry $base -IsFile:($Target -eq 'File')
 }
 
 # === Check for power-scripts update ===

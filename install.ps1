@@ -131,5 +131,25 @@ if ($currentPolicy -eq 'Restricted' -or $currentPolicy -eq 'Undefined' -or $curr
     Write-Ok "Execution policy already permissive ($currentPolicy)."
 }
 
+# ---------------------------------------------------------------------------
+# 5. Optional: register common scripts into the right-click context menu
+# ---------------------------------------------------------------------------
+Write-Step "Registering scripts into the right-click context menu (optional)..."
+$registerPath = Join-Path $ScriptsPath 'Register-ContextMenuScript.ps1'
+$response = Read-Host "Register power-scripts to the right-click context menu? (Y/N, default N)"
+if ($response -match '^[Yy]$') {
+    if (Test-Path $registerPath) {
+        & $registerPath -Name DupeCheck  -Label 'Check Duplicates'    -ScriptPath (Join-Path $ScriptsPath 'duplicate-file-check.ps1')
+        & $registerPath -Name GenReplace -Label 'Generate Replace LISP' -ScriptPath (Join-Path $ScriptsPath 'generate-replace-autocad.ps1')
+        & $registerPath -Name GetFileList -Label 'Export File List'   -ScriptPath (Join-Path $ScriptsPath 'export-file-list.ps1')
+        & $registerPath -Name SplitPDF   -Label 'Split PDF' -ScriptPath (Join-Path $ScriptsPath 'split-pdf.ps1') -Target File -FileExtension '.pdf'
+        Write-Ok "Context menu entries registered. Right-click a folder or a .pdf file -> 'Power Script'."
+    } else {
+        Write-Warn2 "Register-ContextMenuScript.ps1 not found — skipping."
+    }
+} else {
+    Write-Ok "Skipped."
+}
+
 Write-Host "`n🎉 Setup complete! Restart your terminal, then open PowerShell 7 and start using the scripts.`n" -ForegroundColor Green
-Write-Host "    (Want the right-click context menu too? Run pwsh-context-menu.ps1 -Enable from an elevated PowerShell.)`n" -ForegroundColor DarkGray
+Write-Host "    (To (re)register the right-click context menu: run install.ps1 again and answer Y.)`n" -ForegroundColor DarkGray
