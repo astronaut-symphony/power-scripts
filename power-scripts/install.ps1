@@ -20,12 +20,12 @@
 
 .USAGE
     Double-click install.bat (recommended, handles elevation automatically), or run:
-        irm https://raw.githubusercontent.com/astronaut-symphony/power-scripts/main/install.ps1 | iex
+        irm https://raw.githubusercontent.com/astronaut-symphony/power-scripts/main/power-scripts/install.ps1 | iex
 #>
 
 $ErrorActionPreference = 'Stop'
 $RepoUrl      = 'https://github.com/astronaut-symphony/power-scripts'
-$TargetFolder = Join-Path $HOME 'Documents\PowerShell'
+$TargetFolder = if ($PSScriptRoot) { Split-Path $PSScriptRoot -Parent } else { Join-Path $HOME 'Documents\PowerShell' }
 $ScriptsPath  = Join-Path $TargetFolder 'power-scripts'   # only this subfolder goes on PATH; power-config does not
 
 function Write-Step($msg) { Write-Host "`n==> $msg" -ForegroundColor Cyan }

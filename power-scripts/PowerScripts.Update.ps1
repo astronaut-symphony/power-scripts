@@ -15,7 +15,7 @@
     can run yourself any time: Test-PowerScriptsUpdate -Force
 #>
 
-$script:PowerScriptsRoot    = Split-Path $PSScriptRoot -Parent          # Documents\PowerShell
+$script:PowerScriptsRoot    = $PSScriptRoot                       # power-scripts
 $script:PowerScriptsRepo    = 'astronaut-symphony/power-scripts'
 $script:VersionFile         = Join-Path $script:PowerScriptsRoot 'version.txt'
 $script:UpdateCheckCache    = Join-Path $script:PowerScriptsRoot '.update-check-cache'
@@ -31,7 +31,7 @@ function Get-PowerScriptsLocalVersion {
 
 function Get-PowerScriptsRemoteVersion {
     try {
-        $url = "https://raw.githubusercontent.com/$($script:PowerScriptsRepo)/main/version.txt"
+        $url = "https://raw.githubusercontent.com/$($script:PowerScriptsRepo)/main/power-scripts/version.txt"
         return (Invoke-RestMethod -Uri $url -TimeoutSec 5).ToString().Trim()
     } catch {
         return $null
@@ -96,7 +96,7 @@ function Test-PowerScriptsUpdate {
     if ($isNewer) {
         Write-Host ""
         Write-Host "⚡ power-scripts update available: v$local -> v$remote" -ForegroundColor Yellow
-        Write-Host "   Run this to update: irm https://raw.githubusercontent.com/$($script:PowerScriptsRepo)/main/install.ps1 | iex" -ForegroundColor DarkGray
+        Write-Host "   Run this to update: irm https://raw.githubusercontent.com/$($script:PowerScriptsRepo)/main/power-scripts/install.ps1 | iex" -ForegroundColor DarkGray
         Write-Host ""
     }
     elseif (-not $Silent) {
@@ -116,7 +116,7 @@ function Update-PowerScripts {
     try {
         Write-Host ""
         Write-Host "Downloading and installing power-scripts update..." -ForegroundColor Cyan
-        $installScript = Invoke-RestMethod -Uri "https://raw.githubusercontent.com/$($script:PowerScriptsRepo)/main/install.ps1" -TimeoutSec 30
+        $installScript = Invoke-RestMethod -Uri "https://raw.githubusercontent.com/$($script:PowerScriptsRepo)/main/power-scripts/install.ps1" -TimeoutSec 30
         Invoke-Expression $installScript
     }
     catch {
