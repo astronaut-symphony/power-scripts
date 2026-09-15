@@ -21,7 +21,7 @@
 
     The script runs with its working directory set to the folder you
     right-clicked, so scripts using relative paths (like Path "." in
-    get-file-list.ps1) behave exactly as if you'd cd'd there yourself.
+    export-file-list.ps1) behave exactly as if you'd cd'd there yourself.
     When it finishes, the window shows "Press any key to exit..." and closes
     on a single keypress — no need to hit Enter.
 
@@ -68,7 +68,7 @@
 
 .EXAMPLE
     .\Register-ContextMenuScript.ps1 -Name GetFileList -Label "Export File List" `
-        -ScriptPath "$HOME\Documents\PowerShell\power-scripts\get-file-list.ps1" -Arguments "-WithExtension"
+        -ScriptPath "$HOME\Documents\PowerShell\power-scripts\export-file-list.ps1" -Arguments "-WithExtension"
 
 .EXAMPLE
     .\Register-ContextMenuScript.ps1 -Name DupeCheck -Label "Check Duplicates" `
@@ -118,7 +118,7 @@ Options:
     -Help            Show this help and exit.
 
 Examples:
-    .\Register-ContextMenuScript.ps1 -Name GetFileList -Label "Export File List" -ScriptPath "$HOME\Documents\PowerShell\power-scripts\get-file-list.ps1" -Arguments "-WithExtension"
+    .\Register-ContextMenuScript.ps1 -Name GetFileList -Label "Export File List" -ScriptPath "$HOME\Documents\PowerShell\power-scripts\export-file-list.ps1" -Arguments "-WithExtension"
     .\Register-ContextMenuScript.ps1 -Name SplitPDF -Label "Split PDF to Folder" -ScriptPath "$HOME\Documents\PowerShell\power-scripts\split-pdf.ps1" -Target File -FileExtension ".pdf"
     .\Register-ContextMenuScript.ps1 -Name DupeCheck -Label "Check Duplicates" -ScriptPath "$HOME\Documents\PowerShell\power-scripts\duplicate-file-check.ps1"
     .\Register-ContextMenuScript.ps1 -Name GetFileList -Remove
