@@ -60,19 +60,14 @@ while ($true) {
     for ($i = 0; $i -lt $entries.Count; $i++) {
         $e    = $entries[$i]
         $mark = if (Test-ContextMenuEntry $e) { "[x]" } else { "[ ]" }
-        if ($e.Target -eq 'File') {
-            $where = "right-click .$($e.FileExtension.TrimStart('.')) file"
-        } else {
-            $where = "right-click folder"
-        }
-        Write-Host ("{0}. {1} {2}  ({3})" -f ($i + 1), $mark, $e.Label, $where)
+        Write-Host ("{0}. {1} {2}" -f ($i + 1), $mark, $e.Label)
     }
 
     Write-Host ""
     Write-Host "A. Register all"
     Write-Host "R. Remove all registered"
     Write-Host "0. Exit"
-    $selection = Read-Host "Pilih nomor untuk toggle (mis. 1,3 atau A) "
+    $selection = Read-Host "Pick a number to toggle (e.g. 1,3 or A) "
     $selection = $selection.Trim()
 
     if (-not $selection -or $selection -eq '0') {
@@ -103,10 +98,10 @@ while ($true) {
                 Add-Entry $e
             }
         } else {
-            Write-Host "Pilihan tidak dikenali: $part" -ForegroundColor Yellow
+            Write-Host "Unknown option: $part" -ForegroundColor Yellow
         }
     }
 }
 
 Write-Host ""
-Write-Host "Selesai. Right-click a folder -> 'Power Script' untuk menjalankan script yang terdaftar." -ForegroundColor Green
+Write-Host "Done. Right-click a folder -> 'Power Script' to run registered scripts." -ForegroundColor Green

@@ -1,8 +1,8 @@
-# ⚡ PowerShell 7 Script Collection
+# PowerShell 7 Script Collection
 
 A personal collection of PowerShell 7 scripts to automate repetitive tasks and manage files.
 
-## 🚀 Setup on Windows
+## Setup on Windows
 
 This collection works with **PowerShell 5.1 (built into Windows) or PowerShell 7+** — the installer below handles everything for you, including installing PowerShell 7 if you don't have it yet.
 
@@ -15,11 +15,17 @@ irm https://raw.githubusercontent.com/astronaut-symphony/power-scripts/main/powe
 This single command will:
 
 - Install PowerShell 7 if it isn't already on your system
-- Set up this repo under `Documents\PowerShell` — if that folder already exists and isn't this repo, it's backed up as a whole first (see [Safe to re-run](#-safe-to-re-run--existing-files) below), nothing is deleted
+- Set up this repo under `Documents\PowerShell` — if that folder already exists and isn't this repo, it's backed up as a whole first (see [Safe to re-run](#safe-to-re-run--existing-files) below), nothing is deleted
 - Add the `power-scripts` folder to your PATH so scripts can be run from anywhere
 - Set your execution policy to `RemoteSigned` so the scripts are allowed to run
 
-Restart your terminal afterward and you're ready to go 🎉
+Restart your terminal afterward and you're ready to go.
+
+**Optional — enable the right-click context menu:** run once to pick which scripts appear when you right-click a folder:
+
+```powershell
+setup-context-menu.ps1
+```
 
 <details>
 <summary>Prefer to see the manual steps instead?</summary>
@@ -37,20 +43,16 @@ Restart your terminal afterward and you're ready to go 🎉
    ```
    Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
    ```
-5. **Enable the right-click context menu (optional)** — pick which scripts to register:
-   ```
-   .\power-scripts\setup-context-menu.ps1
-   ```
 </details>
 
-### 🔁 Safe to re-run / existing files
+### Safe to re-run / existing files
 
 `install.ps1` can be run again any time (e.g. to update) without losing your own work:
 
 - If `Documents\PowerShell` is already this repo, it just runs `git pull` — any uncommitted local changes you made are stashed first (recoverable with `git stash pop`).
 - If the folder exists but isn't this repo (e.g. it has your own `Microsoft.PowerShell_profile.ps1` or other scripts), the whole folder is renamed aside to `Documents\PowerShell_backup_<timestamp>` before a clean clone is done in its place. Nothing is deleted — copy anything you need back out of the backup folder afterward.
 
-## 🔔 Update Checking
+## Update Checking
 
 This repo tracks its own version in `power-scripts\version.txt`. Once installed, your profile checks for updates automatically (and every script reminds you at the end of a run):
 
@@ -59,11 +61,29 @@ This repo tracks its own version in `power-scripts\version.txt`. Once installed,
 
 If an update is available, you'll be asked whether to install it right then (Y/N) — or press `I` to ignore the prompt for a few days.
 
-## 📂 Folder Structure
+## Uninstall
+
+To completely remove power-scripts, run:
+
+```powershell
+irm https://raw.githubusercontent.com/astronaut-symphony/power-scripts/main/power-scripts/uninstall.ps1 | iex
+```
+
+Or just run `uninstall.ps1` from anywhere — `power-scripts` is already on your PATH.
+
+This will:
+
+- Remove the `power-scripts` folder from your PATH
+- Delete the repo folder (`Documents\PowerShell`) after asking for confirmation
+- Optionally reset your execution policy back to `Restricted`
+
+PowerShell 7 itself is **not** uninstalled.
+
+## Folder Structure
 
 ```
 Documents\PowerShell\
-├── power-scripts\          ← everything else: all scripts, install.ps1, version.txt (added to PATH)
+├── power-scripts\          ← everything else: all scripts, install.ps1, uninstall.ps1, version.txt (added to PATH)
 │   ├── config\             ← local configuration, not tracked
 │   └── .update-*-cache     ← update-check/snooze state, not tracked
 ├── Modules\                ← installed PowerShell modules (e.g. PSWritePDF), not tracked
@@ -71,7 +91,7 @@ Documents\PowerShell\
 └── README.md
 ```
 
-## 💡 Contribution
+## Contribution
 
 Want to improve or add new features?
 
@@ -82,6 +102,6 @@ Want to improve or add new features?
 
 Let's build something helpful together!
 
-## 📄 License
+## License
 
 This repository is intended for personal use and experimentation. You're free to adapt it to your own workflows.

@@ -62,7 +62,7 @@ function prompt {
         }
     } catch {}
 
-    "`n$blue$shortenedPath$gitBranch$resetColor`n$cyan❯ $resetColor"
+    "`n$blue$shortenedPath$gitBranch$resetColor`n$cyan> $resetColor"
 }
 
 # === Update check for power-scripts ===

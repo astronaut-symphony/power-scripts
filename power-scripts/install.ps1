@@ -33,6 +33,20 @@ function Write-Ok($msg)   { Write-Host "    OK: $msg" -ForegroundColor Green }
 function Write-Warn2($msg){ Write-Host "    !  $msg" -ForegroundColor Yellow }
 
 # ---------------------------------------------------------------------------
+# Confirm before proceeding
+# ---------------------------------------------------------------------------
+Write-Host "`nThis will install astronaut-symphony/power-scripts to $TargetFolder" -ForegroundColor Yellow
+Write-Host "  - Install PowerShell 7 (if missing)" -ForegroundColor Yellow
+Write-Host "  - Clone/pull the repo" -ForegroundColor Yellow
+Write-Host "  - Add power-scripts to PATH" -ForegroundColor Yellow
+Write-Host "  - Set execution policy to RemoteSigned" -ForegroundColor Yellow
+$confirm = Read-Host "`nProceed with install? (y/N)"
+if ($confirm -ne 'y' -and $confirm -ne 'Y') {
+    Write-Host "Aborted." -ForegroundColor Red
+    exit
+}
+
+# ---------------------------------------------------------------------------
 # 1. Ensure PowerShell 7 is installed
 # ---------------------------------------------------------------------------
 Write-Step "Checking for PowerShell 7..."
@@ -84,11 +98,17 @@ if (Test-Path (Join-Path $TargetFolder '.git')) {
 }
 else {
     if (Test-Path $TargetFolder) {
-        $backupName = "PowerShell_backup_$(Get-Date -Format 'yyyyMMdd-HHmmss')"
-        $backupPath = Join-Path (Split-Path $TargetFolder -Parent) $backupName
-        Write-Warn2 "'$TargetFolder' exists but isn't this repo — backing up the whole folder to '$backupPath' first."
-        Rename-Item -Path $TargetFolder -NewName $backupName
-        Write-Ok "Backed up. Nothing was deleted."
+        Write-Warn2 "'$TargetFolder' exists but isn't this repo."
+        $choice = Read-Host "    (B)ackup old folder, or (R)eplace directly? (B/R)"
+        if ($choice -match '^[Rr]$') {
+            Remove-Item -Path $TargetFolder -Recurse -Force
+            Write-Ok "Old folder removed."
+        } else {
+            $backupName = "PowerShell_backup_$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+            $backupPath = Join-Path (Split-Path $TargetFolder -Parent) $backupName
+            Rename-Item -Path $TargetFolder -NewName $backupName
+            Write-Ok "Backed up to '$backupPath'. Nothing was deleted."
+        }
     }
 
     if ($git) {
