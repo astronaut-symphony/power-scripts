@@ -60,12 +60,7 @@ while ($true) {
     for ($i = 0; $i -lt $entries.Count; $i++) {
         $e    = $entries[$i]
         $mark = if (Test-ContextMenuEntry $e) { "[x]" } else { "[ ]" }
-        if ($e.Target -eq 'File') {
-            $where = "right-click .$($e.FileExtension.TrimStart('.')) file"
-        } else {
-            $where = "right-click folder"
-        }
-        Write-Host ("{0}. {1} {2}  ({3})" -f ($i + 1), $mark, $e.Label, $where)
+        Write-Host ("{0}. {1} {2}" -f ($i + 1), $mark, $e.Label)
     }
 
     Write-Host ""
