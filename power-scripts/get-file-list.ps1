@@ -8,7 +8,7 @@ param (
 if ($Help) {
         Write-Host @"
 Usage:
-    .\export-file-list.ps1 [-IncludeHidden] [-WithExtension] [-Extension <ext1,ext2,...>] [-Help]
+    .\get-file-list.ps1 [-IncludeHidden] [-WithExtension] [-Extension <ext1,ext2,...>] [-Help]
 
 Options:
     -IncludeHidden   Include hidden/system files and folders.
@@ -18,10 +18,10 @@ Options:
     -Help            Show this help and exit.
 
 Examples:
-    .\export-file-list.ps1
-    .\export-file-list.ps1 -WithExtension
-    .\export-file-list.ps1 -Extension ps1
-    .\export-file-list.ps1 -Extension ps1,txt -IncludeHidden
+    .\get-file-list.ps1
+    .\get-file-list.ps1 -WithExtension
+    .\get-file-list.ps1 -Extension ps1
+    .\get-file-list.ps1 -Extension ps1,txt -IncludeHidden
 "@
         return
 }

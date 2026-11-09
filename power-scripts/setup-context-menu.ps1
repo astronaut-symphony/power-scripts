@@ -4,30 +4,35 @@
 
 .DESCRIPTION
     Lets you pick which power-scripts get registered into the Explorer
-    right-click menu ("Power Script" submenu). Nothing is registered unless
-    you select it — install.ps1 does NOT touch the context menu anymore.
+    right-click menu ("Power Script" submenu, shown when you right-click empty
+    space inside a folder). Nothing is registered unless you select it.
 
     Pick a number to toggle that entry (register if missing, remove if
     registered), 'A' to register everything, 'R' to remove everything that is
     registered, and '0'/Enter to exit. Re-running is always safe.
+
+    -Refresh (used by the installer after an update): no questions asked —
+    re-registers every entry that is already registered so it points at the
+    current pwsh and script paths, and drops entries that no longer exist.
 #>
+
+param([switch]$Refresh)
 
 $root      = $PSScriptRoot
 $register  = Join-Path $root 'Register-ContextMenuScript.ps1'
 
 $entries = @(
-    @{ Name = 'DupeCheck';   Label = 'Check Duplicates';       Script = 'duplicate-file-check.ps1';     Target = 'Both' }
-    @{ Name = 'GenReplace';  Label = 'Generate Replace LISP';  Script = 'generate-replace-autocad.ps1'; Target = 'Both' }
-    @{ Name = 'GetFileList'; Label = 'Export File List';       Script = 'export-file-list.ps1';         Target = 'Both' }
-    @{ Name = 'SplitPDF';    Label = 'Split PDF';              Script = 'split-pdf.ps1';                Target = 'Both' }
+    @{ Name = 'DupeCheck';   Label = 'Check Duplicates'; Script = 'duplicate-file-check.ps1'; Target = 'Background' }
+    @{ Name = 'GetFileList'; Label = 'Get File List';    Script = 'get-file-list.ps1';        Target = 'Background' }
+    @{ Name = 'SplitPDF';    Label = 'Split PDF';        Script = 'split-pdf.ps1';            Target = 'Background' }
+    @{ Name = 'Excel2PDF';   Label = 'Excel to PDF';     Script = 'excel-to-pdf.ps1';         Target = 'Background' }
 )
 
 function Test-ContextMenuEntry([hashtable]$Entry) {
     if ($Entry.Target -eq 'File') {
         return (Test-Path "HKCU:\Software\Classes\$($Entry.FileExtension)\shell\PowerScripts\shell\$($Entry.Name)")
     }
-    return ((Test-Path "HKCU:\Software\Classes\Directory\shell\PowerScripts\shell\$($Entry.Name)") -or
-            (Test-Path "HKCU:\Software\Classes\Directory\Background\shell\PowerScripts\shell\$($Entry.Name)"))
+    return (Test-Path "HKCU:\Software\Classes\Directory\Background\shell\PowerScripts\shell\$($Entry.Name)")
 }
 
 function Add-Entry([hashtable]$Entry) {
@@ -35,7 +40,7 @@ function Add-Entry([hashtable]$Entry) {
     if ($Entry.Target -eq 'File') {
         & $register -Name $Entry.Name -Label $Entry.Label -ScriptPath $scriptPath -Target File -FileExtension $Entry.FileExtension
     } else {
-        & $register -Name $Entry.Name -Label $Entry.Label -ScriptPath $scriptPath -Target Both
+        & $register -Name $Entry.Name -Label $Entry.Label -ScriptPath $scriptPath -Target $Entry.Target
     }
 }
 
@@ -43,13 +48,25 @@ function Remove-Entry([hashtable]$Entry) {
     if ($Entry.Target -eq 'File') {
         $null = & $register -Name $Entry.Name -Remove -Target File -FileExtension $Entry.FileExtension
     } else {
-        $null = & $register -Name $Entry.Name -Remove -Target Both
+        $null = & $register -Name $Entry.Name -Remove -Target $Entry.Target
     }
 }
 
 if (-not (Test-Path $register)) {
     Write-Host "Register-ContextMenuScript.ps1 not found next to this script." -ForegroundColor Red
     exit 1
+}
+
+if ($Refresh) {
+    $registered = @($entries | Where-Object { Test-ContextMenuEntry $_ })
+    # The folder-icon menu is no longer offered, and entries not in $entries are gone
+    Remove-Item 'HKCU:\Software\Classes\Directory\shell\PowerScripts' -Recurse -Force -ErrorAction SilentlyContinue
+    $names = $entries | ForEach-Object { $_.Name }
+    Get-ChildItem 'HKCU:\Software\Classes\Directory\Background\shell\PowerScripts\shell' -ErrorAction SilentlyContinue |
+        Where-Object { $_.PSChildName -notin $names } |
+        ForEach-Object { Remove-Item $_.PSPath -Recurse -Force }
+    foreach ($e in $registered) { Add-Entry $e }
+    return
 }
 
 while ($true) {
@@ -104,4 +121,4 @@ while ($true) {
 }
 
 Write-Host ""
-Write-Host "Done. Right-click a folder -> 'Power Script' to run registered scripts." -ForegroundColor Green
+Write-Host "Done. Right-click empty space in a folder -> 'Power Script' to run registered scripts." -ForegroundColor Green

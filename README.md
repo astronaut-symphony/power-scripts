@@ -2,105 +2,78 @@
 
 A personal collection of PowerShell 7 scripts to automate repetitive tasks and manage files.
 
-## Setup on Windows
+## Install, update and uninstall
 
-This collection works with **PowerShell 5.1 (built into Windows) or PowerShell 7+** — the installer below handles everything for you, including installing PowerShell 7 if you don't have it yet.
+Everything is **per-user — no administrator rights or password needed** — and works from **Windows PowerShell 5.1 (built into Windows) or PowerShell 7+**. Open PowerShell and run:
 
-Open PowerShell and run:
+**Install** (and **update** — it's the same command):
 
 ```powershell
 irm https://raw.githubusercontent.com/astronaut-symphony/power-scripts/main/power-scripts/install.ps1 | iex
 ```
 
-This single command will:
-
-- Install PowerShell 7 if it isn't already on your system
-- Set up this repo under `Documents\PowerShell` — if that folder already exists and isn't this repo, it's backed up as a whole first (see [Safe to re-run](#safe-to-re-run--existing-files) below), nothing is deleted
-- Add the `power-scripts` folder to your PATH so scripts can be run from anywhere
-- Set your execution policy to `RemoteSigned` so the scripts are allowed to run
-
-Restart your terminal afterward and you're ready to go.
-
-**Optional — enable the right-click context menu:** run once to pick which scripts appear when you right-click a folder:
-
-```powershell
-setup-context-menu.ps1
-```
-
-<details>
-<summary>Prefer to see the manual steps instead?</summary>
-
-1. **Install PowerShell 7** from the [official releases page](https://github.com/PowerShell/PowerShell/releases/latest) — download `PowerShell-<version>-win-x64.msi` and run it.
-2. **Get the repo into `Documents\PowerShell`**:
-   ```
-   git clone https://github.com/astronaut-symphony/power-scripts.git "$HOME\Documents\PowerShell"
-   ```
-3. **Add the scripts folder to PATH**:
-   ```
-   [Environment]::SetEnvironmentVariable("PATH", $env:PATH + ";$HOME\Documents\PowerShell\power-scripts", "User")
-   ```
-4. **Allow scripts to run**:
-   ```
-   Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
-   ```
-</details>
-
-### Safe to re-run / existing files
-
-`install.ps1` can be run again any time (e.g. to update) without losing your own work:
-
-- If `Documents\PowerShell` is already this repo, it just runs `git pull` — any uncommitted local changes you made are stashed first (recoverable with `git stash pop`).
-- If the folder exists but isn't this repo (e.g. it has your own `Microsoft.PowerShell_profile.ps1` or other scripts), the whole folder is renamed aside to `Documents\PowerShell_backup_<timestamp>` before a clean clone is done in its place. Nothing is deleted — copy anything you need back out of the backup folder afterward.
-
-## Update Checking
-
-This repo tracks its own version in `power-scripts\version.txt`. Once installed, your profile checks for updates automatically (and every script reminds you at the end of a run):
-
-- **Automatic:** every new terminal session checks once every 24 hours and only says something if an update is actually available — otherwise it stays silent.
-- **Manual:** run `Test-PowerScriptsUpdate -Force` any time to check immediately, or run `PowerScripts.Update.ps1` by double-clicking / "Run with PowerShell".
-
-If an update is available, you'll be asked whether to install it right then (Y/N) — or press `I` to ignore the prompt for a few days.
-
-## Uninstall
-
-To completely remove power-scripts, run:
+**Uninstall:**
 
 ```powershell
 irm https://raw.githubusercontent.com/astronaut-symphony/power-scripts/main/power-scripts/uninstall.ps1 | iex
 ```
 
-Or just run `uninstall.ps1` from anywhere — `power-scripts` is already on your PATH.
+### What the installer does
 
-This will:
+1. Downloads the **latest GitHub release** (no git needed). If the download fails, nothing is changed.
+2. Installs **PowerShell 7** for your user with `winget` if it's missing (portable ZIP fallback if winget isn't available).
+3. Puts the scripts in `Documents\PowerShell\power-scripts`. When updating, the previous version is kept as `power-scripts_backup`, so you can go back one step.
+4. If you already have a PowerShell profile, it **asks** before using the bundled one (yours is saved as a `.bak`). It never overwrites your profile silently.
+5. Adds `power-scripts` to your user `PATH` and sets the execution policy to `RemoteSigned` (current user only).
+6. Offers to set up the right-click menu — or, on an update, refreshes the entries you already have.
 
-- Remove the `power-scripts` folder from your PATH
-- Delete the repo folder (`Documents\PowerShell`) after asking for confirmation
-- Optionally reset your execution policy back to `Restricted`
+Restart your terminal afterward and you're ready to go. Re-running the installer is always safe.
 
-PowerShell 7 itself is **not** uninstalled.
+> If `Documents\PowerShell` is a git checkout (a developer's working copy), the installer and the update prompt leave it alone — update that with `git pull`.
+
+### Right-click menu
+
+Right-click **empty space inside a folder** → **Power Script**, then pick:
+
+| Menu item | What it does |
+|---|---|
+| Check Duplicates | `duplicate-file-check.ps1` |
+| Get File List | `get-file-list.ps1` |
+| Split PDF | `split-pdf.ps1` |
+| Excel to PDF | `excel-to-pdf.ps1` — pick one or many Excel files, then a folder; each workbook becomes one PDF with all its sheets (needs Microsoft Excel) |
+
+To choose which entries are shown, run `setup-context-menu.ps1` and pick numbers to toggle them. All scripts can also be run directly from a terminal (e.g. `get-file-list.ps1 -WithExtension`; add `-Help` to see the options of a script).
+
+### Updates
+
+Updates come from **GitHub releases**. Every script reminds you at the end of a run (checked at most once every 24 hours; a new terminal also checks quietly) when a newer release exists. Answer `Y` to update right away, `N` to skip, or `I` to ignore the prompt for a few days. To check immediately, run `Test-PowerScriptsUpdate -Force`, or just run the install command again.
+
+### Uninstall
+
+The uninstaller removes `power-scripts` from your `PATH`, removes the right-click menu entries, deletes the `power-scripts` folder (after asking) and optionally resets the execution policy. PowerShell 7 and your profile are **not** removed.
 
 ## Folder Structure
 
 ```
 Documents\PowerShell\
-├── power-scripts\          ← everything else: all scripts, install.ps1, uninstall.ps1, version.txt (added to PATH)
-│   ├── config\             ← local configuration, not tracked
-│   └── .update-*-cache     ← update-check/snooze state, not tracked
-├── Modules\                ← installed PowerShell modules (e.g. PSWritePDF), not tracked
-├── Microsoft.PowerShell_profile.ps1
-└── README.md
+├── power-scripts\          ← all scripts, install.ps1, uninstall.ps1, version.txt (added to PATH)
+│   ├── config\             ← local configuration, kept across updates
+│   └── .update-*-cache     ← update-check/snooze state
+├── power-scripts_backup\   ← previous version, created by an update
+├── Modules\                ← installed PowerShell modules (e.g. PSWritePDF), not touched
+└── Microsoft.PowerShell_profile.ps1
 ```
 
-## Contribution
+## For developers
 
-Want to improve or add new features?
+Clone the repo (`git clone https://github.com/astronaut-symphony/power-scripts.git "$HOME\Documents\PowerShell"`) instead of using the installer, and update with `git pull`. The installer and the update prompt detect the `.git` folder and stay out of the way.
 
-- Fork this repo
-- Create a branch: `git checkout -b feat/feature-name`
-- Commit your changes
-- Push and open a pull request
+**Releasing a new version** (what users receive is the latest *release*, not `main`):
 
-Let's build something helpful together!
+1. Put your changes on `main` and bump `power-scriptsersion.txt` (e.g. `1.0.3`).
+2. Create a GitHub release with the matching tag (`v1.0.3`). Until then, nobody is offered the update.
+
+Want to contribute? Fork this repo, create a branch (`git checkout -b feat/feature-name`), commit, push and open a pull request.
 
 ## License
 

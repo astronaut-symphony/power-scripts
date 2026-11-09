@@ -10,8 +10,8 @@
         . (Join-Path $PSScriptRoot 'power-scripts\PowerScripts.Update.ps1')
         Test-PowerScriptsUpdate -Silent
 
-    That gives you an automatic check on every new shell (throttled — see
-    below — so it won't slow down startup or spam you), plus a command you
+    That gives you an automatic check on every new shell (throttled - see
+    below - so it won't slow down startup or spam you), plus a command you
     can run yourself any time: Test-PowerScriptsUpdate -Force
 #>
 
@@ -30,9 +30,11 @@ function Get-PowerScriptsLocalVersion {
 }
 
 function Get-PowerScriptsRemoteVersion {
+    # Latest GitHub *release* tag (v1.2.3 -> 1.2.3) - unreleased pushes to main never trigger an update
     try {
-        $url = "https://raw.githubusercontent.com/$($script:PowerScriptsRepo)/main/power-scripts/version.txt"
-        return (Invoke-RestMethod -Uri $url -TimeoutSec 5).ToString().Trim()
+        $url = "https://api.github.com/repos/$($script:PowerScriptsRepo)/releases/latest"
+        $tag = (Invoke-RestMethod -Uri $url -Headers @{ 'User-Agent' = 'power-scripts-updater' } -TimeoutSec 5).tag_name
+        return $tag.TrimStart('v').Trim()
     } catch {
         return $null
     }
@@ -59,18 +61,18 @@ function Test-PowerScriptsUpdate {
         try {
             $snoozedUntil = [datetime](Get-Content $script:UpdateSnoozeFile -Raw)
             if ((Get-Date) -lt $snoozedUntil) {
-                return   # user snoozed the update prompt — stay quiet
+                return   # user snoozed the update prompt - stay quiet
             }
-        } catch { }   # bad/corrupt snooze file — fall through and check now
+        } catch { }   # bad/corrupt snooze file - fall through and check now
     }
 
     if (-not $Force -and (Test-Path $script:UpdateCheckCache)) {
         try {
             $lastCheck = [datetime](Get-Content $script:UpdateCheckCache -Raw)
             if ((Get-Date) - $lastCheck -lt (New-TimeSpan -Hours $script:UpdateCheckEveryHrs)) {
-                return   # checked recently enough — skip, keeps shell startup fast and offline-friendly
+                return   # checked recently enough - skip, keeps shell startup fast and offline-friendly
             }
-        } catch { }   # bad/corrupt cache file — fall through and check now
+        } catch { }   # bad/corrupt cache file - fall through and check now
     }
 
     $local  = Get-PowerScriptsLocalVersion
@@ -82,20 +84,20 @@ function Test-PowerScriptsUpdate {
         return
     }
     if (-not $local) {
-        if (-not $Silent) { Write-Host "Local power-scripts version unknown (no version.txt found) — latest is $remote." -ForegroundColor Yellow }
+        if (-not $Silent) { Write-Host "Local power-scripts version unknown (no version.txt found) - latest is $remote." -ForegroundColor Yellow }
         return
     }
 
     try {
         $isNewer = [version]$remote -gt [version]$local
     } catch {
-        # version.txt isn't a clean x.y.z string — fall back to a plain inequality check
+        # version.txt isn't a clean x.y.z string - fall back to a plain inequality check
         $isNewer = $remote -ne $local
     }
 
     if ($isNewer) {
         Write-Host ""
-        Write-Host "⚡ power-scripts update available: v$local -> v$remote" -ForegroundColor Yellow
+        Write-Host "power-scripts update available: v$local -> v$remote" -ForegroundColor Yellow
         Write-Host "   Run this to update: irm https://raw.githubusercontent.com/$($script:PowerScriptsRepo)/main/power-scripts/install.ps1 | iex" -ForegroundColor DarkGray
         Write-Host ""
     }
@@ -111,8 +113,10 @@ function Test-PowerScriptsUpdate {
 function Update-PowerScripts {
     <#
     .SYNOPSIS
-        Downloads and applies the latest power-scripts install.ps1 from GitHub.
+        Downloads and runs the latest install.ps1 from GitHub, which installs the
+        latest release over the current one (the old version is kept as a backup).
     #>
+    $PowerScriptsAssumeYes = $true   # the caller already asked; install.ps1 skips its own confirmation
     try {
         Write-Host ""
         Write-Host "Downloading and installing power-scripts update..." -ForegroundColor Cyan
@@ -121,7 +125,7 @@ function Update-PowerScripts {
     }
     catch {
         Write-Host "Update failed: $($_.Exception.Message)" -ForegroundColor Red
-        Write-Host "Try running this in a PowerShell window as Administrator." -ForegroundColor Yellow
+        Write-Host "Check your internet connection and try again." -ForegroundColor Yellow
     }
 }
 
@@ -146,6 +150,9 @@ function Update-PowerScriptsPrompt {
         Ideal at the end of a script run.
     #>
     param([switch]$Force)
+
+    # A git checkout (developer copy) updates with `git pull`, not this prompt
+    if (Test-Path (Join-Path (Split-Path $script:PowerScriptsRoot -Parent) '.git')) { return }
 
     # -Silent keeps the "up to date" line quiet; the update-available banner still prints.
     if (-not (Test-PowerScriptsUpdate -Silent -PassThru -Force:$Force)) {

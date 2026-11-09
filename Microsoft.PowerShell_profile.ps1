@@ -66,5 +66,8 @@ function prompt {
 }
 
 # === Update check for power-scripts ===
-. (Join-Path $PSScriptRoot 'power-scripts\PowerScripts.Update.ps1')
-Test-PowerScriptsUpdate -Silent
+$updateScript = Join-Path $PSScriptRoot 'power-scripts\PowerScripts.Update.ps1'
+if (Test-Path $updateScript) {   # missing after uninstall — don't break every new terminal
+    . $updateScript
+    Test-PowerScriptsUpdate -Silent
+}
