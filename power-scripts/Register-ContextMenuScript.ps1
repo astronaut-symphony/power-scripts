@@ -21,7 +21,7 @@
 
     The script runs with its working directory set to the folder you
     right-clicked, so scripts using relative paths (like Path "." in
-    export-file-list.ps1) behave exactly as if you'd cd'd there yourself.
+    get-file-list.ps1) behave exactly as if you'd cd'd there yourself.
     When it finishes, the window shows "Press any key to exit..." and closes
     on a single keypress — no need to hit Enter.
 
@@ -30,7 +30,7 @@
     Used to add/remove this specific entry later.
 
 .PARAMETER Label
-    Text shown for this entry inside the submenu (e.g. "Export File List").
+    Text shown for this entry inside the submenu (e.g. "Get File List").
     Defaults to -Name if not given.
 
 .PARAMETER ScriptPath
@@ -67,8 +67,8 @@
     Show this help and exit.
 
 .EXAMPLE
-    .\Register-ContextMenuScript.ps1 -Name GetFileList -Label "Export File List" `
-        -ScriptPath "$HOME\Documents\PowerShell\power-scripts\export-file-list.ps1" -Arguments "-WithExtension"
+    .\Register-ContextMenuScript.ps1 -Name GetFileList -Label "Get File List" `
+        -ScriptPath "$HOME\Documents\PowerShell\power-scripts\get-file-list.ps1" -Arguments "-WithExtension"
 
 .EXAMPLE
     .\Register-ContextMenuScript.ps1 -Name DupeCheck -Label "Check Duplicates" `
@@ -118,7 +118,7 @@ Options:
     -Help            Show this help and exit.
 
 Examples:
-    .\Register-ContextMenuScript.ps1 -Name GetFileList -Label "Export File List" -ScriptPath "$HOME\Documents\PowerShell\power-scripts\export-file-list.ps1" -Arguments "-WithExtension"
+    .\Register-ContextMenuScript.ps1 -Name GetFileList -Label "Get File List" -ScriptPath "$HOME\Documents\PowerShell\power-scripts\get-file-list.ps1" -Arguments "-WithExtension"
     .\Register-ContextMenuScript.ps1 -Name SplitPDF -Label "Split PDF to Folder" -ScriptPath "$HOME\Documents\PowerShell\power-scripts\split-pdf.ps1" -Target File -FileExtension ".pdf"
     .\Register-ContextMenuScript.ps1 -Name DupeCheck -Label "Check Duplicates" -ScriptPath "$HOME\Documents\PowerShell\power-scripts\duplicate-file-check.ps1"
     .\Register-ContextMenuScript.ps1 -Name GetFileList -Remove
@@ -144,16 +144,28 @@ function Get-PwshExe {
     return (Get-Command powershell).Source
 }
 
+# Creates a registry key, including any missing parent segments.
+# Plain New-Item fails with "The registry key at the specified path does not
+# exist" when an intermediate key is absent, which happens for bases like
+# HKCU:\Software\Classes\Directory\Background (Explorer only creates that one
+# under HKLM, not in the per-user hive).
+function New-RegKey([string]$Path) {
+    if (Test-Path -LiteralPath $Path) { return $Path }
+    $parent = Split-Path -Parent $Path
+    if ($parent -and -not (Test-Path -LiteralPath $parent)) {
+        $null = New-RegKey $parent
+    }
+    New-Item -Path $Path -Force | Out-Null
+    return $Path
+}
+
 # Ensures the cascading "Power Script" submenu key exists under $BasePath,
 # using the registry's "subcommands" trick so Explorer treats it as a flyout
 # menu populated by the child keys under its own \shell\ subkey.
 function Set-ContextMenuGroup([string]$BasePath) {
-    $groupPath = Join-Path $BasePath "shell\$GroupName"
     # NOTE: New-Item -Force on an EXISTING registry key deletes its child keys,
-    # so only create the group when it isn't there yet.
-    if (-not (Test-Path $groupPath)) {
-        New-Item -Path $groupPath | Out-Null
-    }
+    # so only create the group (and its parents) when it isn't there yet.
+    $groupPath = New-RegKey (Join-Path $BasePath "shell\$GroupName")
     Set-ItemProperty -Path $groupPath -Name 'MUIVerb' -Value $GroupLabel
     Set-ItemProperty -Path $groupPath -Name 'subcommands' -Value ''
     if ($GroupIcon) {
@@ -180,14 +192,14 @@ function Set-ContextMenuEntry([string]$BasePath, [switch]$IsFile) {
         return
     }
 
-    New-Item -Path $keyPath -Force | Out-Null
+    New-RegKey $keyPath | Out-Null
     Set-ItemProperty -Path $keyPath -Name '(default)' -Value $Label
     if ($Icon) {
         Set-ItemProperty -Path $keyPath -Name 'Icon' -Value $Icon
     }
 
     $cmdKeyPath = Join-Path $keyPath 'command'
-    New-Item -Path $cmdKeyPath -Force | Out-Null
+    New-RegKey $cmdKeyPath | Out-Null
 
     $pwshExe = Get-PwshExe
     if ($IsFile) {
@@ -213,7 +225,3 @@ if ($Target -eq 'File')               { $bases += "HKCU:\Software\Classes\$FileE
 foreach ($base in $bases) {
     Set-ContextMenuEntry $base -IsFile:($Target -eq 'File')
 }
-
-# === Check for power-scripts update ===
-. (Join-Path $PSScriptRoot 'PowerScripts.Update.ps1')
-Update-PowerScriptsPrompt
